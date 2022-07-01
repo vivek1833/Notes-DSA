@@ -47,7 +47,7 @@ void display(node *head)
     cout << "NULL" << endl;
 }
 
-node *reverse_Iter(node *&head)
+node *reverse_Iter(node *&head)          // ITERATIVE WAY TO REVERSE LINKED LIST 
 {
     node *prevptr = NULL;
     node *currptr = head;
@@ -65,7 +65,7 @@ node *reverse_Iter(node *&head)
     return prevptr;
 }
 
-node *reverse_Recur(node *&head)
+node *reverse_Recur(node *&head)                   // RECURSIVE WAY TO REVERSE LINKED LIST 
 {
     if (head == NULL || head->next == NULL)
     {
