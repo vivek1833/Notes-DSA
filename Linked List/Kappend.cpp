@@ -36,7 +36,7 @@ void insertattail(node *&head, int val)
     temp->next = n;
 }
 
-int length(node *head)
+int length(node *head)                     // LENGTH OF LINKED LIST
 {
     int l = 0;
     node *temp = head;
@@ -48,11 +48,11 @@ int length(node *head)
     return l;
 }
 
-node *kappend(node *&head, int k)
-{
-    node *newhead;
+node *kappend(node *&head, int k)            // APPEND LAST K ELEMENTS AT START
+{                                            // 10 -> 20 -> 30 -> 40 -> 50 -> 60 -> NULL
+    node *newhead;                           // k = 2
     node *newtail;
-    node *tail = head;
+    node *tail = head;                       // 50 -> 60 -> 10 -> 20 -> 30 -> 40 -> NULL
 
     int l = length(head);
     k = k % l;

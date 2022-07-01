@@ -59,13 +59,13 @@ int length(node *head)
     return l;
 }
 
-void make_intersect(node *&head1, node *&head2, int pos)
+void make_intersect(node *&head1, node *&head2, int pos)           // MAKE INTERSECT BETWEEN TWO LINKED LIST
 {
-    node *temp1 = head1;
-    pos--;
-
-    while (pos--)
-    {
+    node *temp1 = head1;                                           // 10 -> 20 -> 30 -> 40 -> 50 -> 50 -> NULL
+    pos--;                                                         // 45 -> NULL
+                                                                    
+    while (pos--)                                                  // After intersectionat position 5 head 5 is;
+    {                                                              // 45 -> 50 -> 60 -> NULL
         temp1 = temp1->next;
     }
 
@@ -77,7 +77,7 @@ void make_intersect(node *&head1, node *&head2, int pos)
     temp2->next = temp1;
 }
 
-int intersection(node *head1, node *head2)
+int intersection(node *head1, node *head2)                       // DETECT INTERSECTION POINT BETWEEN TWO LINKED LIST
 {
     int l1 = length(head1);
     int l2 = length(head2);

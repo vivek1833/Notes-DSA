@@ -59,11 +59,11 @@ int length(node *head)
     return l;
 }
 
-int kelement(node *head, int k)
-{
-    node *temp = head;
+int kelement(node *head, int k)        // FIND K ELEMENT FROM LAST
+{                                      // 10 -> 20 -> 30 -> 40 -> 50 -> 60 -> NULL
+    node *temp = head;                 // k = 2  
     int p = length(head) - k;
-
+                                       // 50 is output
     while (p--)
     {
         temp = temp->next;

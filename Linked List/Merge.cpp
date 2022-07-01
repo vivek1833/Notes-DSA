@@ -48,7 +48,7 @@ void display(node *head)
     cout << "NULL" << endl;
 }
 
-node *merge_recur(node *&head1, node *&head2)
+node *merge_recur(node *&head1, node *&head2)          // RECURSIVE MERGING OF TWO SORTED LINKED LIST 
 {
     if (head1 == NULL)
         return head2;
@@ -71,7 +71,7 @@ node *merge_recur(node *&head1, node *&head2)
     return result;
 }
 
-node *merge_iter(node *&head1, node *&head2)
+node *merge_iter(node *&head1, node *&head2)             // ITERATIVE MERGING OF TWO SORTED LINKED LIST
 {
     node *p1 = head1;
     node *p2 = head2;
@@ -128,7 +128,7 @@ int main()
     node *newnode = merge_recur(head1, head2);
     node *newnode = merge_iter(head1, head2);
 
-    display(newnode);
+    display(newnode);                    // 5 -> 10 -> 20 -> 25 -> 30 -> 35 -> 40 -> 45 -> NULL 
 
     return 0;
 }

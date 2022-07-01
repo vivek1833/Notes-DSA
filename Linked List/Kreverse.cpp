@@ -47,11 +47,11 @@ void display(node *head)
     cout << "NULL" << endl;
 }
 
-node *reversek(node *&head, int k)
-{
-    node *prevptr = NULL;
+node *reversek(node *&head, int k)               // REVERSE EVERY K ELEMENT
+{                                                // 10 -> 20 -> 30 -> 40 -> 50 -> 60 -> NULL
+    node *prevptr = NULL;                        // k = 2;  
     node *currptr = head;
-    node *nextptr;
+    node *nextptr;                               // 20 -> 10 -> 40 -> 30 -> 60 -> 50 -> NULL
 
     int count = 0;
     while (currptr != NULL && count < k)

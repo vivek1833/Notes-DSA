@@ -47,9 +47,9 @@ void display(node *head)
     cout << "NULL" << endl;
 }
 
-void makecylce(node *&head, int pos)
-{
-    node *temp = head;
+void makecylce(node *&head, int pos)        // pos = 3
+{                                           // 10 -> 20 -> 30 -> 40 -> 50 -> 60 -> 70 -> 30 -> 40 -> 50 -> 60.....
+    node *temp = head;                      // MAKE CYCLE IN LINKED LIST
     node *startnode;
 
     int count = 1;
@@ -65,7 +65,7 @@ void makecylce(node *&head, int pos)
     temp->next = startnode;
 }
 
-bool detectcycle(node *&head)
+bool detectcycle(node *&head)             // DETECT CYCLE IN LINKED LIST
 {
     node *slow = head;
     node *fast = head;
@@ -83,7 +83,7 @@ bool detectcycle(node *&head)
     return false;
 }
 
-void removecycle(node *&head)
+void removecycle(node *&head)               // REMOVE CYCLE IN LINKED LIST
 {
     node *slow = head;
     node *fast = head;
