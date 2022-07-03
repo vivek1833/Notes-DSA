@@ -1,76 +1,88 @@
-#include <bits/stdc++.h>
+#include <iostream>
 using namespace std;
 
-// A structure to represent a stack
-class node
+struct node
 {
-public:
     int data;
     node *next;
+    node(int val)
+    {
+        data = val;
+        next = NULL;
+    }
 };
 
-node *newNode(int data)
+// top pointer to keep track of the top of the stack
+node *top = NULL;
+
+// Function to check if stack is empty or not
+bool isempty()
 {
-    node *stackNode = new node();
-    stackNode->data = data;
-    stackNode->next = NULL;
-    return stackNode;
+    if (top == NULL)
+        return true;
+    else
+        return false;
 }
 
-int isEmpty(node *root)
+// Function to insert an element in stack
+void push(int value)
 {
-    return !root;
+    node *ptr = new node(value);
+    ptr->next = top;
+    top = ptr;
 }
 
-void push(node **root, int data)
+// Function to delete an element from the stack
+void pop()
 {
-    node *stackNode = newNode(data);
-    stackNode->next = *root;
-    *root = stackNode;
-    cout << data << " pushed to stack\n";
+    if (isempty())
+        cout << "Stack is Empty";
+    else
+    {
+        node *ptr = top;
+        top = top->next;
+        delete (ptr);
+    }
 }
 
-int pop(node **root)
+// Function to show the element at the top of the stack
+void showTop()
 {
-    if (isEmpty(*root))
-        return INT_MIN;
-        
-    node *temp = *root;
-    *root = (*root)->next;
-    int popped = temp->data;
-    free(temp);
-
-    return popped;
+    if (isempty())
+        cout << "Stack is Empty";
+    else
+        cout << "Element at top is : " << top->data;
 }
 
-int peek(node *root)
+// Function to Display the stack
+void displayStack()
 {
-    if (isEmpty(root))
-        return INT_MIN;
-    return root->data;
+    if (isempty())
+        cout << "Stack is Empty";
+    else
+    {
+        node *temp = top;
+        while (temp != NULL)
+        {
+            cout << temp->data << " ";
+            temp = temp->next;
+        }
+        cout << "\n";
+    }
 }
 
 int main()
 {
-    node *root = NULL;
+    node *head = NULL;
+    push(10);
+    push(20);
+    push(30);
+    push(40);
+    push(50);
 
-    push(&root, 10);
-    push(&root, 20);
-    push(&root, 30);
-
-    cout << pop(&root) << " popped from stack\n";
-
-    cout << "Top element is " << peek(root) << endl;
-
-    cout << "Elements present in stack : ";
-    // print all elements
-    while (!isEmpty(root))
-    {
-        // print top element in stack
-        cout << peek(root) << " ";
-        // remove top element in stack
-        pop(&root);
-    }
+    displayStack();
+    pop();
+    displayStack();
 
     return 0;
 }
