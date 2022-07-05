@@ -29,9 +29,9 @@ void Stack::push(int x)
     }
     else
     {
-        a[++top] = x;
-        return;
-    }
+        a[++top] = x; // top = -1, arr{5} = [][][][][][]
+        return;       // top = 0, arr{5} = [10][][][][]
+    }                 // top = 1, arr{5} = [10][20][][][]
 }
 
 void Stack::pop()
@@ -57,8 +57,7 @@ int Stack::peek()
     }
     else
     {
-        int x = a[top];
-        return x;
+        return a[top];
     }
 }
 
@@ -73,20 +72,28 @@ int main()
     s.push(10);
     s.push(20);
     s.push(30);
-    s.pop();
+    cout << s.peek();
+    // while (!s.isEmpty())
+    // {
+    //     // print top element in stack
+    //     cout << s.peek() << " ";
+    //     // remove top element in stack
+    //     s.pop();
+    // }
+    // s.pop();
 
-    // print top element of stack after poping
-    cout << "Top element is : " << s.peek() << endl;
+    // // print top element of stack after poping
+    // cout << "Top element is : " << s.peek() << endl;
 
-    // print all elements in stack :
-    cout << "Elements present in stack : ";
-    while (!s.isEmpty())
-    {
-        // print top element in stack
-        cout << s.peek() << " ";
-        // remove top element in stack
-        s.pop();
-    }
+    // // print all elements in stack :
+    // cout << "Elements present in stack : ";
+    // while (!s.isEmpty())
+    // {
+    //     // print top element in stack
+    //     cout << s.peek() << " ";
+    //     // remove top element in stack
+    //     s.pop();
+    // }
 
     return 0;
 }

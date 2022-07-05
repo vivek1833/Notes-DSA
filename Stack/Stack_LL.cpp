@@ -28,7 +28,7 @@ bool isempty()
 void push(int value)
 {
     node *ptr = new node(value);
-    ptr->next = top;
+    ptr->next = top; // top => [20] --> [10] --> NULL
     top = ptr;
 }
 
