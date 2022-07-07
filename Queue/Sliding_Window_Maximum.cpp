@@ -26,6 +26,7 @@ int main()
     vector<int> res = MaxWindow(v, 3);
     for (auto i : res)
         cout << i << " ";
+    // 3 3 5 5 6 7
 
     return 0;
 }
