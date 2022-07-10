@@ -51,6 +51,11 @@ void postorder(struct Node *root)
     cout << root->data << " ";
 }
 
+void levelOrder(Node *root)
+{
+    
+}
+
 int main()
 {
     struct Node *root = new Node(1);
