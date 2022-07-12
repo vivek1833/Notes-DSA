@@ -72,7 +72,7 @@ int main()
     Insert(root, 4);
     Insert(root, 5);
 
-    Zigzag(root); // 10 7 4 5 8
+    Zigzag(root); // 10 7 4 8 5
 
     return 0;
 }
