@@ -1,46 +1,87 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-class Graph
+class graph
 {
     int node;
-    int vertices;
-    vector<vector<int>> adj; // Matrix representation of graph
+    int ver;
 
 public:
-    Graph(int n, int v)
+    graph(int n, int v)
     {
-        node = n;
-        vertices = v;
-        adj.resize(node);
+        this->node = n;
+        this->ver = v;
     }
 
-    void edge(int u, int v)
+    vector<int> AdjacencyList()
     {
-        adj[u][v] = 1;
-        adj[v][u] = 1;
-    }
-
-    void Print()
-    {
-        for (int i = 0; i < node; i++)
+        vector<int> g[ver + 1];
+        for (int i = 0; i < ver; i++)
         {
-            cout << i << " -> ";
-            for (auto j : adj[i])
-                cout << j << " ";
-            cout << endl;
+            int x, y;
+            cin >> x >> y;
+            g[x].push_back(y);
+            g[y].push_back(x);
         }
+        return g[ver + 1];
+    }
+
+    vector<vector<int>> AdjacencyMatrix()
+    {
+        vector<vector<int>> g;
+        for (int i = 0; i < ver; i++)
+        {
+            int x, y;
+            cin >> x >> y;
+            g[x][y] = 1;
+            g[y][x] = 1;
+        }
+        return g;
     }
 };
 
+void PrintGraph(int node, vector<vector<int>> g)
+{
+    for (int i = 1; i < node + 1; i++)
+    {
+        for (int j = 1; j < node + 1; j++)
+        {
+            cout << g[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+void Print(int node, vector<int> g[])
+{
+    for (int i = 1; i < node + 1; i++)
+    {
+        cout << i << "->";
+        for (int x : g[i])
+        {
+            cout << x << " ";
+        }
+        cout << endl;
+    }
+}
+
 int main()
 {
-    Graph g(3, 3);
-    g.edge(1, 2);
-    g.edge(2, 3);
-    g.edge(3, 1);
+    // int n, m; // n: nodes, m: vertices
+    // cin >> n >> m;
 
-    g.Print();
+    // vector<vector<int>> adjm(n + 1, vector<int>(n + 1, 0)); // Adjacency Matrix
 
-    return 0;
+    // AdjacencyMatrix(m, adjm);
+    // PrintGraph(n, adjm);
+
+    // vector<int> adjL[n + 1];
+    // AdjacencyList(m, adjL);
+
+    // Print(n, adjL);
+
+    graph g(7, 7);
+
+    Print(7, &g.AdjacencyList());
+    PrintGraph(7, g.AdjacencyMatrix());
 }
