@@ -1,87 +1,59 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-class graph
+class Graph
 {
-    int node;
-    int ver;
+    int numberOfNodes;
+    vector<int> *adjacencyList; // Adjacency list
 
 public:
-    graph(int n, int v)
+    Graph(int nodesCount)
     {
-        this->node = n;
-        this->ver = v;
+        numberOfNodes = nodesCount;
+        adjacencyList = new vector<int>[numberOfNodes];
     }
-
-    vector<int> AdjacencyList()
+    void addEdge(int a, int b)
     {
-        vector<int> g[ver + 1];
-        for (int i = 0; i < ver; i++)
-        {
-            int x, y;
-            cin >> x >> y;
-            g[x].push_back(y);
-            g[y].push_back(x);
-        }
-        return g[ver + 1];
+        adjacencyList[a].push_back(b);
+        adjacencyList[b].push_back(a);
     }
-
-    vector<vector<int>> AdjacencyMatrix()
+    void showConnections()
     {
-        vector<vector<int>> g;
-        for (int i = 0; i < ver; i++)
+        for (int i = 0; i < numberOfNodes; i++)
         {
-            int x, y;
-            cin >> x >> y;
-            g[x][y] = 1;
-            g[y][x] = 1;
+            cout << i << "-> ";
+            for (int j = 0; j < adjacencyList[i].size(); j++)
+            {
+                cout << adjacencyList[i][j] << " ";
+            }
+            cout << endl;
         }
-        return g;
     }
 };
 
-void PrintGraph(int node, vector<vector<int>> g)
-{
-    for (int i = 1; i < node + 1; i++)
-    {
-        for (int j = 1; j < node + 1; j++)
-        {
-            cout << g[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
-
-void Print(int node, vector<int> g[])
-{
-    for (int i = 1; i < node + 1; i++)
-    {
-        cout << i << "->";
-        for (int x : g[i])
-        {
-            cout << x << " ";
-        }
-        cout << endl;
-    }
-}
-
 int main()
 {
-    // int n, m; // n: nodes, m: vertices
-    // cin >> n >> m;
+    Graph graph1(7);
 
-    // vector<vector<int>> adjm(n + 1, vector<int>(n + 1, 0)); // Adjacency Matrix
+    graph1.addEdge(3, 1);
+    graph1.addEdge(3, 4);
+    graph1.addEdge(4, 2);
+    graph1.addEdge(4, 5);
+    graph1.addEdge(1, 2);
+    graph1.addEdge(1, 0);
+    graph1.addEdge(0, 2);
+    graph1.addEdge(6, 5);
 
-    // AdjacencyMatrix(m, adjm);
-    // PrintGraph(n, adjm);
+    graph1.showConnections();
 
-    // vector<int> adjL[n + 1];
-    // AdjacencyList(m, adjL);
-
-    // Print(n, adjL);
-
-    graph g(7, 7);
-
-    Print(7, &g.AdjacencyList());
-    PrintGraph(7, g.AdjacencyMatrix());
+    return 0;
 }
+
+// OUTPUT
+//  0-->1 2
+//  1-->3 2 0
+//  2-->4 1 0
+//  3-->1 4
+//  4-->3 2 5
+//  5-->4 6
+//  6-->5
