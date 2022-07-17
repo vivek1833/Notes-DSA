@@ -34,6 +34,6 @@ int getMinSquares(int n)
 
 int main()
 {
-    cout << getMinSquares(10);  // 2
+    cout << getMinSquares(26);  // 2
     return 0;      
 }
