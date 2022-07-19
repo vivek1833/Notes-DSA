@@ -1,27 +1,26 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void solve()
+int lis(int arr[], int n)
 {
-    int n;
-    cin >> n;
+    int lis[n];
+    lis[0] = 1;
 
-    vector<int> a(n);
-    for (int i = 0; i < n; i++)
-        cin >> a[i];
-
-    vector<int> dp(n, 1);
-    int ans = 0;
     for (int i = 1; i < n; i++)
     {
+        lis[i] = 1;
         for (int j = 0; j < i; j++)
-        {
-            if (a[i] > a[j])
-            {
-                dp[i] = max(dp[i], dp[j] + 1);
-            }
-        }
-        ans = max(ans, dp[i]);
+            if (arr[i] > arr[j] && lis[i] < lis[j] + 1)
+                lis[i] = lis[j] + 1;
     }
-    cout << ans << endl;
+    return *max_element(lis, lis + n);
+}
+
+int main()
+{
+    int arr[] = {10, 22, 9, 33, 21, 50, 41, 60};
+    int n = sizeof(arr) / sizeof(arr[0]);
+    printf("Length of lis is %d\n", lis(arr, n));
+
+    return 0;
 }

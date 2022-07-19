@@ -1,39 +1,36 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int knapsack()
+int knapSack(int W, int wt[], int val[], int n)
 {
-    int n;
-    cin >> n;
+    int i, w;
+    int K[2][W + 1];
 
-    vector<int> w(n);
-    vector<int> v(n);
-
-    for (int i = 0; i < n; i++)
-        cin >> w[i];
-
-    for (int i = 0; i < n; i++)
-        cin >> v[i];
-
-    int x;
-    cin >> x;
-
-    vector<vector<int>> dp(n + 1, vector<int>(x + 1, 0));
-
-    for (int i = 1; i < n + 1; i++)
+    for (i = 0; i <= n; i++)
     {
-        for (int j = 0; j < x + 1; j++)
+        for (w = 0; w <= W; w++)
         {
-            dp[i][j] = dp[i - 1][j];
-            if (j - w[i - 1] >= 0)
-                dp[i][j] = max(dp[i][j], dp[i - 1][j - w[i - 1]] + v[i - 1]);
+            if (i == 0 || w == 0)
+                K[i % 2][w] = 0;
+
+            else if (wt[i - 1] <= w)
+                K[i % 2][w] = max(val[i - 1] + K[(i - 1) % 2][w - wt[i - 1]], K[(i - 1) % 2][w]);
+
+            else
+                K[i % 2][w] = K[(i - 1) % 2][w];
         }
     }
-    cout << dp[n][x] << endl;
+    return K[n % 2][W];
 }
 
 int main()
 {
-    knapsack();
+    int val[] = {60, 100, 120};
+    int wt[] = {10, 20, 30};
+    int W = 50;
+    int n = sizeof(val) / sizeof(val[0]);
+
+    cout << knapSack(W, wt, val, n);
+
     return 0;
 }

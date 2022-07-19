@@ -1,35 +1,34 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void solve()
+int count(int S[], int m, int n)
 {
-    int m;
-    cin >> m; 
+    int i, j, x, y;
+    int table[n + 1][m];
 
-    vector<int> s(m);
+    for (i = 0; i < m; i++)
+        table[0][i] = 1;
 
-    for (int i = 0; i < m; i++)
-        cin >> s[i];
-
-    int x;
-    cin >> x;
-
-    vector<int> dp(x + 1, 0);
-    dp[0] = 1;
-
-    for (int i = 0; i < m; i++)
+    for (i = 1; i < n + 1; i++)
     {
-        for (int j = 0; j < x + 1; j++)
+        for (j = 0; j < m; j++)
         {
-            if (j - s[i] >= 0)
-                dp[j] += dp[j - s[i]];
+            x = (i - S[j] >= 0) ? table[i - S[j]][j] : 0;
+            y = (j >= 1) ? table[i][j - 1] : 0;
+            table[i][j] = x + y;
         }
     }
-    cout << dp[x] << endl;
+    return table[n][m - 1];
 }
 
 int main()
 {
-    solve();
+    int arr[] = {1, 2, 3};
+    int m = sizeof(arr) / sizeof(arr[0]);
+    int n = 4;
+    cout << count(arr, m, n);
     return 0;
 }
+
+// This code is contributed
+// by Akanksha Rai(Abby_akku)
