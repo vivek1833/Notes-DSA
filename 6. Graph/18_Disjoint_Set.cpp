@@ -1,55 +1,71 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-class DisSet
+class DSU
 {
-    int *rank, *parent, n;
+    vector<int> par, size, rank;
 
-public:
-    DisSet(int n)
+    DSU(int v)
     {
-        rank = new int[n];
-        parent = new int[n];
-        this->n = n;
-
-        for (int i = 0; i < n; i++)
-            parent[i] = i;
+        par.resize(v + 1);
+        size.resize(v + 1, 1);
+        rank.resize(v + 1, 0);
+        for (int i = 0; i < v; i++)
+            par[i] = i;
     }
 
-    int find(int x)
+    int findPar(int node)
     {
-        if (parent[x] != x)
-            parent[x] = find(parent[x]);
-        return parent[x];
+        if (par[node] == node)
+            return node;
+        return par[node] = findPar(par[node]);
     }
 
-    void unionSet(int x, int y)
+    void unionBySize(int u, int v)
     {
-        int xroot = find(x);
-        int yroot = find(y);
-
-        if (xroot == yroot)
+        u = findPar(u), v = findPar(v);
+        if (u == v)
             return;
-
-        if (rank[xroot] < rank[yroot])
+        if (size[u] < size[v])
         {
-            parent[xroot] = yroot;
+            par[u] = v;
+            size[v] += size[u];
         }
-
-        else if (rank[xroot] > rank[yroot])
-        {
-            parent[yroot] = xroot;
-        }
-
         else
         {
-            parent[yroot] = xroot;
-            rank[xroot]++;
+            par[v] = u;
+            size[u] += size[v];
         }
     }
 
-    bool isSameSet(int x, int y)
+    void unionByRank(int u, int v)
     {
-        return find(x) == find(y);
+        u = findPar(u), v = findPar(v);
+        if (u == v)
+            return;
+        if (rank[u] < rank[v])
+        {
+            par[u] = v;
+        }
+        else if (rank[v] < rank[u])
+        {
+            par[v] = u;
+        }
+        else
+        {
+            par[v] = u;
+            rank[u]++;
+        }
+    }
+
+    int countComponents()
+    {
+        int cnt = 0;
+        for (int i = 0; i < par.size(); i++)
+        {
+            if (par[i] == i)
+                cnt++;
+        }
+        return cnt;
     }
 };
