@@ -1,36 +1,36 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int lcs(char *X, char *Y, int m, int n)
-{
-    int L[m + 1][n + 1];
-
-    for (int i = 0; i <= m; i++)
+class Solution {
+private:
+    int solve(int i, int j, int n, int m, string s1, string s2)
     {
-        for (int j = 0; j <= n; j++)
-        {
-            if (i == 0 || j == 0)
-                L[i][j] = 0;
+        if(i>=n || j>=m)    return 0;
+        if(s1[i]==s2[j])    return 1+solve(i+1,j+1,n,m,s1,s2);
+        
+        int one=solve(i+1,j,n,m,s1,s2);
+        int two=solve(i,j+1,n,m,s1,s2);
 
-            else if (X[i - 1] == Y[j - 1])
-                L[i][j] = L[i - 1][j - 1] + 1;
-
-            else
-                L[i][j] = max(L[i - 1][j], L[i][j - 1]);
-        }
+        return max(one,two);
     }
-    return L[m][n];
-}
 
-int main()
-{
-    char X[] = "AGGTAB";
-    char Y[] = "GXTXAYB";
+    int solveMemo(int i, int j, int n, int m, string s1, string s2, vector<vector<int>> &dp)
+    {
+        if(i>=n || j>=m)    return 0;
+        if(dp[i][j]!=-1)    return dp[i][j];
+        if(s1[i]==s2[j])    return dp[i][j]=1+solveMemo(i+1,j+1,n,m,s1,s2,dp);
+        
+        int one=solveMemo(i+1,j,n,m,s1,s2,dp);
+        int two=solveMemo(i,j+1,n,m,s1,s2,dp);
 
-    int m = strlen(X);
-    int n = strlen(Y);
+        return dp[i][j]=max(one,two);
+    }
 
-    cout << "Length of LCS is: " << lcs(X, Y, m, n);
-
-    return 0;
-}
+public:
+    int LCS(string s1, string s2, int n, int m)
+    {
+        // return solve(0, 0, n, m, s1, s2);
+        vector<vector<int>> dp(n+1, vector<int>(m+1, -1));
+        return solveMemo(0,0,n,m,s1,s2,dp);
+    }
+};
