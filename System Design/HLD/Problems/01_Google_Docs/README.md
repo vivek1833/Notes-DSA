@@ -43,7 +43,7 @@ Design a real-time collaborative document editing system similar to Google Docs 
           │                      │                      │
           └──────────────────────┼──────────────────────┘
                                  │
-                    ┌─────────────┴─────────────┐
+                    ┌────────────┴────────-─────┐
                     │      Load Balancer        │
                     └─────────────┬─────────────┘
                                   │
@@ -53,7 +53,7 @@ Design a real-time collaborative document editing system similar to Google Docs 
                                   │
         ┌─────────────────────────┼─────────────────────────┐
         │                         │                         │
-┌───────▼────────┐    ┌───────────▼──────────┐    ┌────────▼────────┐
+┌───────▼────────┐    ┌───────────▼──────────┐    ┌─────-───▼───────┐
 │  WebSocket     │    │   Document Service   │    │   User Service  │
 │   Service      │    │                      │    │                 │
 └───────┬────────┘    └───────────┬──────────┘    └────────┬────────┘
@@ -76,6 +76,35 @@ Design a real-time collaborative document editing system similar to Google Docs 
                     │  └─────────┴─────────────┘│
                     └───────────────────────────┘
 ```
+
+## Diagram: Layered Architecture (Mermaid)
+
+```mermaid
+graph TD
+
+    %% Clients and Entry Points
+    Client --> APIGW[API Gateway]
+    Client --> CDN
+
+    %% Document Flow
+    APIGW --> DocService[Doc Service]
+    DocService --> ObjStorage[Object Storage]
+    DocService --> DB[Cassandra DB]
+
+    %% WebSocket & Real-time Path
+    APIGW --> WS[Web Socket]
+    WS --> MQ[Message Queue]
+    MQ --> Workers
+    Workers --> DB
+
+    WS --> DB
+
+    %% CDN Path
+    CDN --> ObjStorage
+
+```
+
+![alt text](image.png)
 
 ### Core Components
 
