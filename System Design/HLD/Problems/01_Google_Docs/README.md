@@ -140,37 +140,52 @@ graph TD
 
 ### Basic OT Algorithm
 
-```javascript
-// Example of Operational Transform for text editing
+```cpp
+struct Retain { int count; };
+struct Insert { std::string text; };
+struct Delete { int count; };
+
+using Operation = std::variant<Retain, Insert, Delete>;
+
 class TextOperation {
-  constructor(ops) {
-    this.ops = ops; // Array of operations (retain, insert, delete)
-  }
+public:
+    std::vector<Operation> ops;
 
-  // Apply operation to a string
-  apply(str) {
-    let result = "";
-    let index = 0;
+    // Apply operation to a given string
+    std::string apply(const std::string& input) {
+        std::string result;
+        size_t index = 0;
 
-    for (const op of this.ops) {
-      if (op.retain) {
-        result += str.slice(index, index + op.retain);
-        index += op.retain;
-      } else if (op.insert) {
-        result += op.insert;
-      } else if (op.delete) {
-        index += op.delete;
-      }
+        for (const auto& op : ops) {
+            if (std::holds_alternative<Retain>(op)) {
+                int count = std::get<Retain>(op).count;
+                result += input.substr(index, count);
+                index += count;
+            } else if (std::holds_alternative<Insert>(op)) {
+                result += std::get<Insert>(op).text;
+            } else if (std::holds_alternative<Delete>(op)) {
+                int count = std::get<Delete>(op).count;
+                index += count;
+            }
+        }
+
+        return result;
     }
+};
 
-    return result;
-  }
+int main() {
+    std::string original = "Hello World";
 
-  // Transform operation against another operation
-  transform(other) {
-    // Implementation of OT transformation
-    // This ensures operations can be applied in any order
-  }
+    TextOperation op;
+    op.ops.push_back(Retain{6});               // Keep "Hello "
+    op.ops.push_back(Insert{"Beautiful "});    // Insert "Beautiful "
+    op.ops.push_back(Retain{5});               // Keep "World"
+
+    std::string result = op.apply(original);
+    std::cout << "Result: " << result << std::endl;
+
+    // Output: "Hello Beautiful World"
+    return 0;
 }
 ```
 
@@ -427,4 +442,58 @@ class TextOperation {
 
 ---
 
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
+## How it works
+
+### Updates
+
+- Send the **entire document** when edited via HTTP (expensive).
+- Send **only the changes** (diff) when edited through WebSocket (cheap).
+- These updates are:
+  - Broadcast to all connected users and processed in real-time.
+  - Stored in the database for version history and rollback.
+
+---
+
+### Real-time Collaboration
+
+- Multiple users can edit the same document simultaneously.
+- Conflict resolution is handled using an **Operational Transform (OT)** algorithm.
+  - **Example:**
+    - User A inserts `'Hello'` at position `0`.
+    - User B simultaneously inserts `'World'` at position `0`.
+    - Since User A's operation is processed first, User B’s operation is transformed to:  
+      `insert('World', 5)`.
+
+---
+
+### New User Joins
+
+- User fetches:
+  - The base document from **object storage**.
+  - All edits from the **database** to synchronize the latest state.
+
+---
+
+### Document Persistence
+
+- When no users are actively editing a document, it is saved to object storage.
+- This is handled asynchronously via:
+  - A **message queue**
+  - Background **worker services**
+
+---
+
+### Scaling Strategies
+
+- **Document Service**
+
+  - Stateless and can be scaled horizontally.
+
+- **WebSocket Service**
+  - Stateful and **cannot be scaled horizontally** without coordination.
+  - Uses **consistent hashing** with `docId` as the key to distribute load:
+    - Example:
+      - `docId` 0–99 → Worker 0
+      - `docId` 100–199 → Worker 1
+
+---

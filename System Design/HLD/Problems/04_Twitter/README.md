@@ -37,109 +37,278 @@ Design a large-scale social media platform like Twitter that allows users to:
 
 ### High-Level Architecture
 
+```mermaid
+graph TD
+  Client[User Client]
+  LB[Load Balancer]
+  API[API Gateway]
+
+  Client --> LB --> API
+  API --> TweetService
+  API --> UserService
+  API --> TimelineService
+
+  API[API Gateway]
+  UserService[User Service]
+  TweetService[Tweet Service]
+  TimelineService[Timeline Service]
+  MediaService[Media Service]
+  NotificationService[Notification Service]
+  AuthService[Auth Service]
+
+  API --> UserService
+  API --> TweetService
+  API --> TimelineService
+  API --> MediaService
+  API --> NotificationService
+  API --> AuthService
+
+  TweetService --> TimelineService
+  UserService --> TimelineService
+
+
+  TweetService --> Kafka[Kafka Cluster]
+  UserService --> Kafka
+  TimelineService --> Kafka
+  MediaService --> Kafka
+
+  Kafka --> AnalyticsService[Analytics Consumer]
+  Kafka --> SearchIndexer[Elasticsearch Indexer]
+  Kafka --> NotificationConsumer
+
+  TweetService --> Redis[Tweet Redis Cache]
+  UserService --> RedisUser[User Redis Cache]
+  TimelineService --> RedisTL[Timeline Redis Cache]
+
+  RedisTL --> TimelineService
+  RedisUser --> UserService
+  Redis --> TweetService
+
+  TweetService --> Kafka[Kafka Cluster]
+  UserService --> Kafka
+  TimelineService --> Kafka
+  MediaService --> Kafka
+
+  Kafka --> AnalyticsService[Analytics Consumer]
+  Kafka --> SearchIndexer[Elasticsearch Indexer]
+  Kafka --> NotificationConsumer
+
+  TweetService --> Redis[Tweet Redis Cache]
+  UserService --> RedisUser[User Redis Cache]
+  TimelineService --> RedisTL[Timeline Redis Cache]
+
+  RedisTL --> TimelineService
+  RedisUser --> UserService
+  Redis --> TweetService
+
+  TweetService --> CassandraTweet[Cassandra - Tweets]
+  UserService --> CassandraUser[Cassandra - Users]
+  MediaService --> ObjectStorage[Object Storage]
+
+  CassandraTweet --> BackupCluster[Cross-DC Backup]
+  CassandraUser --> BackupCluster
+
+  MediaService --> ObjectStorage
+  ObjectStorage --> CDN[CDN Edge Layer]
+  Client --> CDN
+
+Client[User Client]
+  Gateway[WebSocket Gateway]
+  PresenceService[Presence Service]
+  RedisPubSub[Redis Pub/Sub]
+  SessionStore[Session Store (Redis/Memcached)]
+  NotifService[Notification Service]
+  
+  Client --> Gateway
+  Gateway --> PresenceService
+  PresenceService --> SessionStore
+  PresenceService --> RedisPubSub
+  RedisPubSub --> NotifService
+
+  UserService[User Service]
+  GraphService[Graph DB Service]
+  Neo4j[Graph DB (e.g., Neo4j / JanusGraph)]
+  ClassificationService[User Classification Service]
+  Kafka[Kafka Events]
+  
+  UserService --> GraphService
+  GraphService --> Neo4j
+  
+  Kafka --> ClassificationService
+  ClassificationService --> UserService
+  
+  ClassificationService --> GraphService  
 ```
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│ Web Client   │   │ Mobile Client│   │ API Client   │
-└──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-       │                  │                  │
-       └────────────┬─────┴─────┬────────────┘
-                    │           │
-           ┌────────▼───────────▼───────────┐
-           │         API Gateway            │
-           └────────┬───────────┬───────────┘
-                    │           │
-      ┌─────────────▼───┐   ┌───▼────────────┐
-      │  Auth Service   │   │  User Service  │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Tweet Service   │   │ Timeline Svc   │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Social Graph    │   │ Search Service │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Like/RetweetSvc │   │ Trend Service  │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ NotificationSvc │   │ Media Service  │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-           ┌───▼─────────────────▼───┐
-           │   Storage Layer (S3,    │
-           │   Blob Store, CDN)      │
-           └─────────────────────────┘
-```
+
+![Twitter Architecture](image.png)
 
 ### Core Components
 
-#### 1. **API Gateway**
+---
 
-- Entry point for all clients
-- Handles authentication, rate limiting, routing
+#### 1. **API Gateway**
+- Entry point for all client traffic (Web, Mobile)
+- Responsibilities:
+  - Authentication and routing
+  - Rate limiting and request validation
+  - Forwarding to internal services
+
+---
 
 #### 2. **Auth Service**
+- Handles user login, logout, token refresh
+- Supports OAuth2, JWT-based sessions
+- Stores session metadata in Redis
 
-- User authentication (OAuth, JWT)
-- Session management
+---
 
 #### 3. **User Service**
+- Manages user profiles, preferences, and settings
+- Interfaces with:
+  - Graph Service for follow/unfollow relationships
+  - Classification Service for dynamic user attributes
+- Exposes user-related APIs to other services
 
-- User profiles, settings, follow/unfollow
-- Social graph management
+---
 
 #### 4. **Tweet Service**
+- Responsible for:
+  - Creating, updating, and deleting tweets
+  - Attaching media (via Media Service)
+  - Storing tweet content in Cassandra or ScyllaDB
+- Publishes tweet-related events to Kafka
 
-- Handles tweet creation, deletion, media attachment
-- Stores tweets in distributed DB
-- Manages tweet metadata (likes, retweets, replies)
+---
 
 #### 5. **Timeline Service**
+- Builds and serves user timelines
+- Supports:
+  - Fan-out on write (precomputed timeline)
+  - Fan-out on read (on-the-fly aggregation)
+- Pulls data from:
+  - Tweet Service
+  - Graph Service
+  - Classification Service
+- Caches hot timelines in Redis for fast access
 
-- Generates personalized timeline (pull, push, or hybrid)
-- Fan-out on write (push) or read (pull) strategies
-- Caches hot timelines in Redis
+---
 
 #### 6. **Social Graph Service**
+- Manages social relationships: follow, unfollow, mute, block
+- Interfaces with Graph DB (Neo4j, JanusGraph, etc.)
+- Supports:
+  - Recommendations (who to follow)
+  - Graph traversal for timeline and search
 
-- Manages follower/following relationships
-- Efficient graph queries for recommendations
+---
 
-#### 7. **Like/Retweet Service**
+#### 7. **Classification Service**
+- Analyzes user behavior and assigns dynamic types:
+  - `Live`, `Active`, `Passive`, `Inactive`, `Famous`
+- Consumes events from Kafka (likes, tweets, logins)
+- Considers live sessions (via Redis/WebSocket)
+- Outputs user types to:
+  - Redis (fast access)
+  - Cassandra (persistent storage)
+  - Graph DB (influence/weight tagging)
+- Consumed by Timeline, Feed, Notification, and Ad systems
 
-- Stores likes, retweets, replies
-- Ensures strong consistency for engagement
-- Moderation and spam detection
+---
 
-#### 8. **Search Service**
+#### 8. **Presence Service / WebSocket Gateway**
+- Maintains live WebSocket connections
+- Tracks user presence (online/offline/idle)
+- Stores session data in Redis
+- Publishes presence events to Kafka
+- Used by:
+  - Notification Service
+  - Feed/Timeline Service
+  - Classification Service
 
-- Indexes tweets, users, hashtags
-- Full-text search, autocomplete, trending
+---
 
-#### 9. **Trend Service**
+#### 9. **Like/Retweet Service**
+- Tracks user interactions with tweets:
+  - Likes, retweets, replies
+- Enforces strong consistency
+- Connects with:
+  - Tweet Service (to update metadata)
+  - Notification Service (to notify tweet owners)
+  - Moderation System (to detect abuse or spam)
 
-- Calculates trending topics and hashtags
-- Real-time analytics and aggregation
+---
 
-#### 10. **Notification Service**
+#### 10. **Search Service**
+- Full-text search for tweets, users, and hashtags
+- Built on Elasticsearch or OpenSearch
+- Features:
+  - Tokenization, relevance scoring, autocomplete
+- Indexes updated via Kafka event streams
 
-- Real-time and batch notifications
-- Push, email, in-app notifications
+---
 
-#### 11. **Media Service**
+#### 11. **Trend Service**
+- Computes trending topics, hashtags, and users
+- Uses real-time data processing (e.g., Flink, Spark Streaming)
+- Factors include:
+  - Tweet frequency
+  - Graph proximity
+  - User classification (famous, active)
+- Results cached and exposed to Search/Explore services
 
-- Handles image/video upload, processing
-- Stores media in object storage (S3, CDN)
-- Generates thumbnails, previews
+---
 
-#### 12. **Storage Layer**
+#### 12. **Notification Service**
+- Sends real-time and batch notifications
+- Supports:
+  - In-app alerts
+  - Push notifications (mobile)
+  - Emails
+- Triggered by Kafka events (likes, follows, mentions)
+- Integrates with Presence Service for instant delivery
 
-- Object storage for media (S3, GCS, Azure Blob)
-- CDN for global delivery
-- SQL/NoSQL for metadata
+---
+
+#### 13. **Media Service**
+- Handles:
+  - Upload and validation of images/videos
+  - Processing (compression, thumbnail, transcoding)
+  - Linking media to tweets
+- Stores in:
+  - Object storage (S3, GCS)
+  - CDN for fast global delivery
+
+---
+
+#### 14. **Feed Service (Consumer)**
+- Kafka consumer that processes new tweets and engagement events
+- Updates:
+  - Push timelines (precomputed)
+  - Cache layers for hot users
+- Prioritizes content based on:
+  - Graph weight
+  - Classification (famous, active users)
+  - Content freshness
+
+---
+
+#### 15. **Storage Layer**
+- **Cassandra / ScyllaDB**: Stores tweets, user metadata, likes, relationships
+- **Redis**:
+  - Caching (timelines, sessions, user types)
+  - Fast lookups (presence, hot content)
+- **Object Storage (S3, GCS, Azure Blob)**:
+  - Stores media files, thumbnails, previews
+- **CDN**:
+  - Serves cached static assets globally with low latency
+
+---
+
+### Optional: Observability and Infra Layers (Not included above but recommended)
+- **Monitoring**: Prometheus, Grafana
+- **Tracing**: OpenTelemetry, Jaeger
+- **Logging**: ELK stack or similar
+- **API Analytics**: Rate limits, abuse tracking, usage patterns
 
 ## 💾 Data Models
 
@@ -272,61 +441,6 @@ Design a large-scale social media platform like Twitter that allows users to:
 - Elasticsearch for indexing
 - Autocomplete and trending queries
 
-## 🧪 Testing Strategy
-
-### Unit Testing
-
-- Tweet creation/deletion logic
-- Timeline generation
-- Like/retweet operations
-
-### Integration Testing
-
-- End-to-end tweet to timeline
-- Search and trend flows
-- Notification and media flows
-
-### Load Testing
-
-- Simulate high tweet/view traffic
-- Timeline latency under heavy load
-- CDN and storage stress tests
-
-### Security Testing
-
-- Auth bypass attempts
-- Media URL access control
-- Spam/abuse detection
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP (2-3 months)
-
-- User registration, authentication, profile
-- Tweet posting, timeline, likes, retweets
-- Follow/unfollow, notifications
-
-### Phase 2: Enhanced Features (3-4 months)
-
-- Search and trends
-- Media attachments
-- Explore/recommendation engine
-- Media processing pipeline
-
-### Phase 3: Advanced Features (2-3 months)
-
-- Timeline optimization (push/pull, caching)
-- Group messaging, analytics
-- Advanced moderation, analytics
-- Mobile and web apps
-
-### Phase 4: Enterprise Features (2-3 months)
-
-- SSO integration, business accounts
-- Advanced analytics and reporting
-- API for third-party integrations
-- Global CDN optimization
-
 ## 🛠️ Technology Stack
 
 ### Backend
@@ -395,5 +509,3 @@ Design a large-scale social media platform like Twitter that allows users to:
 - [Elasticsearch for Search](https://www.elastic.co/)
 
 ---
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
