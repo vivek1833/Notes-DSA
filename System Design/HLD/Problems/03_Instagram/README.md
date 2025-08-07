@@ -54,17 +54,17 @@ graph TD
   A1 --> A2
 
   %% ------------------ Auth Domain ------------------
-  subgraph Auth Domain
+  subgraph "Auth Domain"
     B1[Auth Service]
     B2[User Service]
   end
 
-  subgraph External Providers
+  subgraph "External Providers"
     E1[OAuth (Google/Facebook)]
     E2[SMS/OTP Provider]
   end
 
-  subgraph Auth Storage
+  subgraph "Auth Storage"
     D1[(MySQL - Auth Data)]
     D3[(Redis - Session Cache)]
   end
@@ -78,7 +78,7 @@ graph TD
   B2 --> D3
 
   %% ------------------ Core Services ------------------
-  subgraph Core Services
+  subgraph "Core Services"
     P1[Post Service]
     F1[Feed Service]
     L1[Like Service]
@@ -89,7 +89,7 @@ graph TD
   end
 
   %% ------------------ Storage Layer ------------------
-  subgraph Storage
+  subgraph "Storage"
     S1[(Cassandra - Posts/Feeds)]
     S2[(Redis - Timeline Cache)]
     S3[(S3 - Media)]
@@ -98,13 +98,13 @@ graph TD
   end
 
   %% ------------------ Async / Event Infra ------------------
-  subgraph Async Infra
+  subgraph "Async Infra"
     K1[Kafka - Events]
     W1[Workers - Feed/Engagement]
   end
 
   %% ------------------ Presence & WebSocket ------------------
-  subgraph Realtime Infra
+  subgraph "Realtime Infra"
     WS1[WebSocket Gateway]
     PR1[Presence Service]
   end
@@ -149,12 +149,12 @@ graph TD
   CL1 --> G1
 
   %% ------------------ Search & Indexing ------------------
-  subgraph Search Services
+  subgraph "Search Services"
     SE1[Search Service]
     SE2[Indexing Worker]
   end
 
-  subgraph Search Storage
+  subgraph "Search Storage"
     ES1[(Elasticsearch)]
     ES2[(Cassandra - Metadata)]
     ES3[(Redis - Search Cache)]
@@ -166,9 +166,10 @@ graph TD
   C1 --> K1 --> SE2
   SE2 --> ES1
   SE2 --> ES2
+    
 ````
 
-![Instagram Architecture](image.png)
+![instagram](image.png)
 
 ### Core Components
 
