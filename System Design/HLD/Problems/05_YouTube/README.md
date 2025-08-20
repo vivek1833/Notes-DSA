@@ -3,35 +3,58 @@
 ## 📋 Problem Statement
 
 Design a video hosting, streaming, recommendation engine that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
+- Video upload, storage, and distribution
+- User authentication and authorization
+- Video playback, comments, and recommendations
+- Search and filtering of videos
+- Live streaming support
+- Real-time analytics and insights
 
 ## 🎯 Functional Requirements
 
 ### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+1. **Video Upload, Storage, and Distribution**: Users can upload, store, and distribute videos on the platform
+2. **User Authentication and Authorization**: Users need to register and log in to access the platform 
+3. **Video Playback, Comments, and Recommendations**: Users can watch videos, leave comments, and receive personalized recommendations
+4. **Search and Filtering**: Users can search for videos based on keywords and filters
+5. **Live Streaming Support**: Users can watch live streams of videos in real-time
+6. **Real-time Analytics and Insights**: The platform provides real-time analytics and insights to help users make informed decisions 
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+- **Availability**: 99.99% uptime
+- **Latency**: <= 200ms for real-time updates
+- **Scalability**: Support large-scale user base and video distribution
+- **Consistency**: Eventual consistency for real-time updates
+- **Security**: Authenticated users only can access their own content
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
+```mermaid
+graph TD
+  Client --> APIGW[API Gateway]
+  Client --> CDN
+
+  APIGW --> VideoService[Video Service]
+  APIGW --> UserService[User Service]
+  APIGW --> CommentService[Comment Service]
+  APIGW --> AnalyticsService[Analytics Service]
+
+  VideoService --> StorageService[Storage Service]
+  VideoService --> DB[Cassandra DB]
+
+  UserService --> DB
+  CommentService --> DB
+  AnalyticsService --> DB
+
+  CDN --> StorageService
+
+  VideoService --> VideoService[Video Service]
+  VideoService --> VideoService[Video Service]
 ```
-[Insert architecture diagram here]
-```
+
+![Youtube Architecture](image.png)
 
 ### Core Components
 

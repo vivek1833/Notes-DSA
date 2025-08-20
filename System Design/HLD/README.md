@@ -217,5 +217,3 @@ public class HelloController {
 ```
 
 ---
-
-**Tip:** For each topic, try to relate it to a real-world system (e.g., how Netflix handles streaming, how WhatsApp manages real-time messaging, etc.).

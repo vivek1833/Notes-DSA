@@ -81,36 +81,6 @@ These problems cover specialized systems that require domain-specific knowledge 
 | [Slack](./34_Slack/README.md)                                       | Messaging with channels, bots, integrations                    | Hard       | Real-time Messaging, Bot Framework, Integrations        |
 | [Multiplayer Game Backend](./35_Multiplayer_Game_Backend/README.md) | Real-time communication and state sync                         | Very Hard  | Game State Management, Real-time Communication, Latency |
 
-## 🎯 How to Use This Repository
-
-### For Learning
-
-1. Start with foundational concepts in the parent directory
-2. Choose problems based on your experience level (Easy → Medium → Hard → Very Hard)
-3. Read the problem description and requirements
-4. Study the system design solution
-5. Practice implementing key components
-
-### For Interview Preparation
-
-1. Practice drawing system diagrams for each problem
-2. Focus on scalability, availability, and consistency trade-offs
-3. Understand the key technologies and algorithms mentioned
-4. Practice explaining your design decisions clearly
-
-### For Implementation
-
-1. Each problem includes implementation guidelines
-2. Start with a basic MVP and iterate
-3. Focus on core functionality first, then add advanced features
-4. Consider using cloud services for scalability
-
-## 📊 Difficulty Levels
-
-- **Easy**: Basic system design concepts, suitable for beginners
-- **Medium**: Moderate complexity, requires understanding of distributed systems
-- **Hard**: Complex systems, requires deep knowledge of scalability and performance
-- **Very Hard**: Enterprise-level systems, requires expertise in multiple domains
 
 ## 🛠️ Key Technologies Covered
 
@@ -134,15 +104,6 @@ Each solution follows these core principles:
 5. **Security**: Protect against threats and vulnerabilities
 6. **Maintainability**: Design for easy updates and modifications
 
-## 🤝 Contributing
-
-Feel free to contribute by:
-
-- Adding new system design problems
-- Improving existing solutions
-- Adding implementation examples
-- Correcting technical inaccuracies
-
 ## 📚 Additional Resources
 
 - [System Design Primer](https://github.com/donnemartin/system-design-primer)
@@ -151,5 +112,3 @@ Feel free to contribute by:
 - [AWS Architecture Center](https://aws.amazon.com/architecture/)
 
 ---
-
-**Note**: These are educational resources for learning system design concepts. Real-world implementations may vary based on specific requirements, constraints, and business needs.
