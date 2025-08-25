@@ -3,34 +3,30 @@
 ## 📋 Problem Statement
 
 Design a to prevent abuse (token bucket, leaky bucket) that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
+- Block unauthorized requests
+- Protect against DoS attacks
+- Prevent abuse by limiting requests per user/IP/API key
+- Revert with appropriate HTTP status codes and details
 
 ## 🎯 Functional Requirements
 
 ### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+1. **Unauthorized Requests**: Unauthorized requests should be blocked.
+2. **DoS Attacks**: Prevent DoS attacks.
+3. **Rate Limiting**: Limit requests per user/IP/API key.
+4. **Revert with Appropriate Status Codes**: Revert with appropriate HTTP status codes and details.
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+- **Availability**: Availability > Consistency as Rate Limiter should be available to avoid abuse.
+- **Latency**: <10ms
+- **Scalability**: Should be able to handle high traffic. (e.g., 1,00,000 requests per second)
+- **Security**: Rate Limiter should be secure. (e.g., IP address, user agent, API key, etc.)
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
 ```
-[Insert architecture diagram here]
 ```
 
 ### Core Components
