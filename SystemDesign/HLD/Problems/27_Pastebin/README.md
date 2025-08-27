@@ -3,217 +3,115 @@
 ## 📋 Problem Statement
 
 Design a text storage with public/private links and expiration that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
 
 ## 🎯 Functional Requirements
 
 ### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+1. **Create a Paste**: Create a new paste with text content and an optional expiration time.
+2. **Retrieve a Paste**: Retrieve the content of a specific paste by its unique URL.
+
+- Create a Paste with custom expiration time
+- Generate unique URL for each paste
+- Retrieve paste by unique URL
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+- Availability >> Consistency for creating/retrieving paste.
+- Consistency >> Availability for creating URL.
+- Latencty (< 100ms)
+- Rate Limiting
+
+### Constraints
+
+- 100M daily active users
+- 10:1 read/write ratio
+- 100M paste per day
+- 100 * 10^6 / 10^5 = 1000 paste/second
+
+---
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
-```
-[Insert architecture diagram here]
-```
+![PasteBin Architecture](image.png)
 
 ### Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 1. **API Gateway**
+- Entry point for all client traffic (Web, Mobile)
+- Handles authentication, authorization, rate limiting
+- Routing to backend microservices
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 2. **Paste Service**
+- Handles paste creation 
+- Storing the text file
+- Generating unique URL for each paste
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 3. **URL Service**
+- Handles URL retrieval from read replicas
+
+#### 3. **URLGenerator Service**
+- Checks if URL is available and generates unique URL for each paste
+- Gets the Count from Redis and return the hash value to generate unique URL
+
+---
+
+### APIs
+
+#### 1. **Create Paste**
+- POST /paste
+- Body: { text: String, expiration: Date }
+- Returns: { url: String }
+
+#### 2. **Retrieve Paste**
+- GET /paste/:url
+- Returns: { text: String }
+
+---
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
-```javascript
+### Paste Schema
+```sql
 {
   _id: ObjectId,
-  // Add fields here
+  s3_url: String,
+  expiration: Date,
+  active: Boolean
+  url_hash: String
+  user_id: ObjectId
 }
 ```
 
-### [Entity 2] Schema
-```javascript
+### User Schema
+```sql
 {
   _id: ObjectId,
-  // Add fields here
+  name: String,
+  email: String
 }
 ```
 
-## 🔧 Key Implementation Details
-
-### [Implementation Detail 1]
-```javascript
-// Add implementation code here
-```
-
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
-```
+---
 
 ## 🚀 Scalability Considerations
 
 ### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
+- Since all the services are stateless, horizontal scaling is possible by adding more instances of each service and load balancing the traffic across them.
+- For the URL generator service, we can use Redis to store the count of generated URLs and generate unique URLs based on the count.
 
 ### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
+- Redis can be used as a cache layer to improve the performance of the URL generation service.
+- Redis can also be used to store the count of generated URLs to ensure that they are unique.
 
 ### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
-
-## 🔒 Security Considerations
-
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
+- For Paste related data, we can use NoSQL database like Cascandra or DynamoDB.
+- For User related data, we can use SQL database like MySQL or Postgres.
+- For Count of generated URLs, we can use Redis to store the count of generated URLs and generate unique URLs based on the count.
 
 ## 📊 Performance Optimization
 
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Storage
+- Use Object Storage (S3, CDN) to store the text file.
+- Paste Creation goes to write replica and URL retrieval goes to read replica.
 
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
-
-## 🧪 Testing Strategy
-
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
-
-### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
-
----
-
-## 📚 Additional Resources
-
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
-
----
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
