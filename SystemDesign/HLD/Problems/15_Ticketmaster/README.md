@@ -3,217 +3,153 @@
 ## 📋 Problem Statement
 
 Design a ticket booking with seat selection and payment that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
 
-## 🎯 Functional Requirements
+### 🎯 Functional Requirements
 
-### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+1. **View Events**: Users should be able to view events.
+2. **Search Events**: Users should be able to search for events.
+3. **Book Tickets**: Users should be able to book tickets to events.
 
-### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+### 🎯 Non-Functional Requirements
+
+- The system should prioritize availability for searching & viewing events, but should prioritize consistency for booking events (no double booking)
+- The system should be scalable and able to handle high throughput in the form of popular events (10 million users, one event)
+- The system should have low latency search (< 500ms)
+- The system is read heavy, and thus needs to be able to support high read throughput (100:1)
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
+![Ticketmaster HLD](image.svg)
+
+### Entities
+
+- Event
+- User
+- Performer
+- Venue
+- Ticket
+- Booking
+
+### API or System Interface
+
+1. **View Events**:
+
+```javascript
+GET /events/:eventId
+-> Event & Venue & Performer & Ticket[]
 ```
-[Insert architecture diagram here]
+
+2. **Search Events**:
+
+```javascript
+GET /events/search?keyword={keyword}&start={start_date}&end={end_date}&pageSize={page_size}&page={page_number}
+-> Event[]
 ```
+
+3. **Book Tickets**:
+
+```javascript
+POST /bookings/:eventId
+{
+  "ticketIds": string[],
+  "paymentDetails": ...
+}
+-> bookingId
+```
+
+---
 
 ### Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 1. **Event Service**
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+- Wiew API requests by fetching the necessary event, venue, and performer information from the database.
+- Events DB stores tables for events, performers, and venues.
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 2. **Search Service**
+
+- Elasticsearch or a similar full-text search engine.
+- To make sure the data in Elasticsearch is always in sync with the data in our SQL DB, we can use change data capture (CDC) for real-time or near-real-time data synchronization from PostgreSQL to Elasticsearch.
+- We can enable fuzzy search functionality with Elasticsearch.
+
+#### 3. **Booking Service**
+
+- Interfaces with the Payment Processor (Stripe) for transactions. Once payment is confirmed, the booking service updates the ticket status to "SOLD".
+- CRUD on Bookings and Tickets.
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
-```javascript
+### Event Schema
+
+```sql
 {
   _id: ObjectId,
-  // Add fields here
+  name: string,
+  description: string,
+  date: Date,
+  performers: [ObjectId],
+  venue: ObjectId,
+  tickets: [ObjectId]
 }
 ```
 
-### [Entity 2] Schema
-```javascript
+### Venue Schema
+
+```sql
 {
   _id: ObjectId,
-  // Add fields here
+  location: string,
+  seatMap: []
 }
 ```
 
-## 🔧 Key Implementation Details
+### Ticket Schema
 
-### [Implementation Detail 1]
-```javascript
-// Add implementation code here
+```sql
+{
+  _id: ObjectId,
+  eventID: ObjectId,
+  seat: string,
+  price: number,
+  status: "AVAILABLE" | "SOLD"
+  userID: ObjectId
+}
 ```
 
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
+### Performer Schema
+
+```sql
+{
+  _id: ObjectId,
+  name: string,
+  description: string,
+  image: string
+}
 ```
-
-## 🚀 Scalability Considerations
-
-### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
-
-### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
-
-### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
-
-## 🔒 Security Considerations
-
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
 
 ## 📊 Performance Optimization
 
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Booking Service Optimizations
 
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+- Use a distributed lock with a TTL using a distributed system like Redis.
+- Lock ticket in Redis with ticket ID when user selects it (key = ticket ID, value = user ID).
+- Use TTL to auto-expire lock if purchase isn’t completed.
+- On successful purchase, update DB to "SOLD" and release Redis lock.
+- If TTL expires, Redis auto-releases lock; ticket becomes available again.
+- Ticket table has only two states: "AVAILABLE" and "SOLD".
 
-## 🧪 Testing Strategy
+### Ensuring ticketing scalability
 
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
-
-### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
-
----
+- Virtual waiting queue for popular events.
+- Users are placed in this queue before even being able to see the booking page (seat map selected).
+- User added to virtual queue & WebSocket connection established.
+- Queue uses WebSocket ID.
 
 ## 📚 Additional Resources
 
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
+- [Problem Breakdown](https://www.hellointerview.com/learn/system-design/problem-breakdowns/ticketmaster)
+- [Youtube](https://www.youtube.com/watch?v=fhdPyoO6aXI&t=3379s)
 
 ---
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
