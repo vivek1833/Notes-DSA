@@ -2,218 +2,410 @@
 
 ## 📋 Problem Statement
 
-Design a push/email/sms system with retries, batching that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
+Design a robust notification system (push / email / SMS) that supports retries, batching, scheduling, priorities, templating, and observability.  
+The system must handle high throughput (millions of notifications/day), provide delivery guarantees (at-least-once with idempotency), support multiple providers per channel, respect user preferences and throttling, and expose operational metrics and audit trails.
+
+---
 
 ## 🎯 Functional Requirements
 
 ### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+
+1. **Send multi-channel notifications** — support push (FCM/APNs), email (SMTP / ESPs), and SMS (telecom providers / SMS gateways).
+2. **Retries & backoff** — automatic retry with exponential backoff, jitter, and dead-letter handling for failed deliveries.
+3. **Batching** — group notifications where possible to reduce cost and provider rate usage.
+4. **Scheduling & recurring** — schedule notifications for future delivery and support recurring rules (cron-like).
+5. **User preferences & rate-limits** — per-user/channel preferences (opt-in, do-not-disturb windows, priority) and global/provider rate-limiting.
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+
+- **Availability**: 99.95% or better for core API and dispatching.
+- **Latency**: <200ms for enqueueing API requests.
+- **Scalability**: Horizontally scalable workers, partitioned queues, autoscaling.
+- **Consistency**: Eventual consistency for delivery state, strong idempotency for enqueue.
+- **Security**: TLS in transit, secrets stored in vault, RBAC for admin APIs, audit trails.
+
+### Entities
+
+- **Notification**: Enqueued, scheduled, dispatched, delivered, or failed.
+- **Channel**: Push, email, SMS.
+- **Provider**: FCM, ESP, SMS gateway.
+- **Template**: Versioned, multi-language templates.
+- **User**: Opt-in, DND windows, throttling rules.
+
+### API Endpoints
+
+#### 1. Create Notification - Enqueue a new notification (email, SMS, or push).
+
+```json
+POST /api/v1/notifications
+Body : {
+  "channel": "EMAIL",
+  "recipient": "user@example.com",
+  "message": "Welcome to our platform!",
+  "metadata": {
+    "priority": "HIGH"
+  }
+}
+
+Response : {
+  "notificationId": "12345-abc",
+  "status": "QUEUED"
+}
+```
+
+2. Get Notification Status - Fetch the current status of a notification (QUEUED, SENT, DELIVERED, FAILED).
+
+```json
+GET /api/v1/notifications/{notificationId}
+Response : {
+  "status": "DELIVERED"
+}
+```
+
+3. Bulk Create Notifications - Submit multiple notifications at once (batching support).
+
+```json
+Body : {
+  "notifications": [
+    {
+      "channel": "SMS",
+      "recipient": "+1555123456",
+      "message": "Your OTP is 987654"
+    },
+    {
+      "channel": "EMAIL",
+      "recipient": "user@example.com",
+      "message": "Your invoice is ready."
+    }
+  ]
+}
+
+Response : {
+  "batchId": "batch-6789",
+  "notifications": [
+    { "notificationId": "n1", "status": "QUEUED" },
+    { "notificationId": "n2", "status": "QUEUED" }
+  ]
+}
+```
+
+4. Retry Notification (Manual Trigger) - Force a retry for a failed notification (usually automatic, but can be manually triggered).
+
+```json
+POST /api/v1/notifications/{notificationId}/retry
+
+Response : {
+  "notificationId": "12345-abc",
+  "status": "RETRY_QUEUED"
+}
+```
+
+---
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
-```
-[Insert architecture diagram here]
-```
+## ![Notification LLD](image.png)
 
-### Core Components
+## 💡 Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+### 1. API Gateway / Ingest
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+- Validate, authenticate, and authorize incoming requests.
+- Enforce quotas and rate limits.
+- Persist notifications and publish to message bus.
+- Return acknowledgement with `notification_id`.
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+### 2. Message Bus / Queue
+
+- Durable, partitioned log (Kafka/Pulsar).
+- Ensures reliability and horizontal scalability.
+
+### 3. Batcher
+
+- Groups notifications within small windows for bulk dispatch.
+- Reduces provider costs and API calls.
+
+### 4. Dispatcher (Workers)
+
+- Pulls from message bus.
+- Transforms into provider-specific formats.
+- Calls channel adapters and tracks delivery.
+
+### 5. Retry & Dead-Letter Handler
+
+- Retries failed deliveries with exponential backoff + jitter.
+- Moves persistent failures to DLQ.
+
+### 6. Template Service
+
+- Stores and renders templates.
+- Supports versioning and multi-language templates.
+
+### 7. User Preferences & RateLimiter
+
+- Enforces opt-in/opt-out, DND, and throttling rules.
+
+### 8. Monitoring & Observability
+
+- Metrics: delivery success rate, queue lag, retries.
+- Tracing: notification lifecycle.
+- Alerts: DLQ growth, error spikes.
+
+---
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
+### Notification Schema
+
 ```javascript
 {
   _id: ObjectId,
-  // Add fields here
+  notification_id: String,
+  tenant_id: String,
+  template_id: String,
+  channel: "email" | "sms" | "push",
+  priority: "high" | "normal" | "low",
+  payload: {
+    subject?: String,
+    body?: String,
+    variables?: Object
+  },
+  recipients: [
+    { user_id?: String, address: String }
+  ],
+  status: "queued" | "dispatched" | "delivered" | "failed" | "scheduled",
+  scheduled_at?: ISODate,
+  created_at: ISODate,
+  updated_at: ISODate,
+  attempts: Number
 }
 ```
 
-### [Entity 2] Schema
+### DeliveryAttempt Schema
+
 ```javascript
 {
   _id: ObjectId,
-  // Add fields here
+  notification_id: String,
+  recipient_address: String,
+  provider: String,
+  attempt_number: Number,
+  status: "success" | "retryable_failure" | "permanent_failure",
+  response_code: Number,
+  response_body: String,
+  tried_at: ISODate,
+  next_retry_at?: ISODate
 }
 ```
+
+### Template Schema
+
+```javascript
+{
+  _id: ObjectId,
+  template_id: String,
+  tenant_id: String,
+  name: String,
+  channel: "email" | "sms" | "push",
+  language: String,
+  subject: String,
+  body: String,
+  variables: [String],
+  version: Number,
+  active: Boolean
+}
+```
+
+### ProviderConfig Schema
+
+```javascript
+{
+  _id: ObjectId,
+  provider_id: String,
+  channel: "email"|"sms"|"push",
+  credentials_ref: String,
+  region: String,
+  priority: Number,
+  rate_limit: { calls_per_second: Number, burst: Number }
+}
+```
+
+---
 
 ## 🔧 Key Implementation Details
 
-### [Implementation Detail 1]
-```javascript
-// Add implementation code here
+### Idempotency & Deduplication
+
+```java
+@Service
+public class NotificationService {
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private MessagePublisher messagePublisher; // Kafka/RabbitMQ abstraction
+
+    public NotificationResponse enqueueNotification(NotificationRequest request) {
+        String notificationId = request.getNotificationId() != null ?
+                                request.getNotificationId() : UUID.randomUUID().toString();
+
+        Optional<NotificationEntity> existing = notificationRepository.findByNotificationId(notificationId);
+        if (existing.isPresent()) {
+            return new NotificationResponse(notificationId, existing.get().getStatus());
+        }
+
+        NotificationEntity entity = new NotificationEntity();
+        entity.setNotificationId(notificationId);
+        entity.setStatus("QUEUED");
+        entity.setCreatedAt(LocalDateTime.now());
+        entity.setPayload(request.getPayload());
+        notificationRepository.save(entity);
+
+        messagePublisher.publish("notifications", notificationId, entity);
+
+        return new NotificationResponse(notificationId, "QUEUED");
+    }
+}
 ```
 
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
+### Retry Worker
+
+```java
+public class RetryPolicy {
+
+    private static final long BASE_MS = 1000;
+    private static final long MAX_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+    public static long computeBackoff(int attempt) {
+        long backoff = (long) Math.min(MAX_MS, BASE_MS * Math.pow(2, attempt));
+        long jitter = (long) (Math.random() * 0.1 * backoff);
+        return backoff + jitter;
+    }
+}
+
+@Service
+public class RetryWorker {
+
+    @Autowired
+    private ChannelAdapter adapter;
+
+    public void process(NotificationEntity notification, int attempt) {
+        try {
+            adapter.send(Collections.singletonList(notification));
+            notification.setStatus("DELIVERED");
+        } catch (Exception e) {
+            long delay = RetryPolicy.computeBackoff(attempt);
+            // reschedule job with delay (via Kafka Delay Queue / Quartz / Spring Scheduler)
+            notification.setStatus("RETRY_PENDING");
+        }
+    }
+}
+
 ```
+
+### Adapter Interface
+
+```java
+public interface ChannelAdapter {
+    void send(List<NotificationEntity> batch) throws Exception;
+    boolean healthCheck();
+}
+
+@Service("emailAdapter")
+public class EmailAdapter implements ChannelAdapter {
+    @Override
+    public void send(List<NotificationEntity> batch) {
+        // integrate with SES / SendGrid API
+    }
+
+    @Override
+    public boolean healthCheck() {
+        // call provider health API
+        return true;
+    }
+}
+
+@Service("smsAdapter")
+public class SmsAdapter implements ChannelAdapter {
+    @Override
+    public void send(List<NotificationEntity> batch) {
+        // integrate with Twilio API
+    }
+
+    @Override
+    public boolean healthCheck() {
+        return true;
+    }
+}
+
+@Service("pushAdapter")
+public class PushAdapter implements ChannelAdapter {
+    @Override
+    public void send(List<NotificationEntity> batch) {
+        // integrate with Firebase Cloud Messaging (FCM) or APNs
+    }
+
+    @Override
+    public boolean healthCheck() {
+        return true;
+    }
+}
+
+```
+
+---
 
 ## 🚀 Scalability Considerations
 
 ### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
+
+- Partitioned message bus for parallelism.
+- Stateless workers behind load balancer.
+- Sharded databases for tenants.
 
 ### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
+
+- Templates & provider configs cached in Redis.
+- User preferences cached with TTL.
+- Idempotency keys cached for dedupe.
 
 ### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
 
-## 🔒 Security Considerations
+- Relational or document DB for notifications.
+- Append-only event store for audit logs.
+- Analytics DB for metrics.
 
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
+---
 
 ## 📊 Performance Optimization
 
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Provider Bulk & Parallelism
 
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+- Use bulk APIs (SendGrid, Twilio).
+- Reuse HTTP/2 or persistent TCP connections.
 
-## 🧪 Testing Strategy
+### Backpressure & Rate-Limiting
 
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
+- Token bucket rate limiters.
+- Backpressure applied when overloaded.
 
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
+### Retry & DLQ Management
 
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
+- Exponential backoff with jitter.
+- DLQ monitoring and alerting.
 
-## 🚀 Implementation Phases
+### Storage & Indexing
 
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
-
-### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
-
----
+- Index notification_id, status, scheduled_at.
+- TTL for old records to control growth.
 
 ## 📚 Additional Resources
 
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
+- [Youtube - HLD](https://youtu.be/CUwt9_l0DOg?si=-R3V18_BGrTU2EXs)
+- [Youtube - LLD](https://youtu.be/t-4r2AsJz_Q?si=tK5WKSQSBaRQMHHF)
 
 ---
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
