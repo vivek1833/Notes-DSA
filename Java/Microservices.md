@@ -1,16 +1,21 @@
-![Microservice Flow](microservice.png)
+# Microservices Situation and Solution
 
-## **1. Service Communication and Data Consistency**`﻿`
+## ⚡️ **1. Service Communication and Data Consistency**
 
 If a **microservice in the middle of a synchronous REST request chain fails**, failure recovery can be handled using **resilience patterns** to prevent cascading failures and improve system stability. Here’s how:
 
-### **1. Implement Circuit Breaker Pattern (Prevent System Overload)**
+1. [Implement Circuit Breaker Patteren (Prevent System Overload)](#1-implement-circuit-breaker-pattern-prevent-system-overload)
+2. [Use Retry Mechanism for Temporary Failures](#2-use-retry-mechanism-for-temporary-failures)
+3. [Set Timeouts to Avoid Blocking Requests](#3-set-timeouts-to-avoid-blocking-requests)
+4. [Use Fallback Response or Cache for Missing Data](#4-implement-fallback-mechanisms)
+5. [Move to Asynchronous Communication for Non-Critical Requests](#5-use-asynchronous-processing-for-non-critical-requests)
 
-The **circuit breaker** prevents the system from repeatedly calling a failing service, which could lead to further slowdowns.
+### <ins>1. Implement Circuit Breaker Pattern (Prevent System Overload)</ins>
 
-**Solution**: Use **Resilience4j Circuit Breaker** to monitor failures and temporarily stop calls to the failing service.
+- The **circuit breaker** prevents the system from repeatedly calling a failing service, which could lead to further slowdowns.
+- **Solution**: Use **Resilience4j Circuit Breaker** to monitor failures and temporarily stop calls to the failing service.
 
-```csharp
+```java
 @CircuitBreaker(name = "orderService", fallbackMethod = "fallbackResponse")
 public String callOrderService() {
     return restTemplate.getForObject("http://order-service/api/orders", String.class);
@@ -23,20 +28,16 @@ public String fallbackResponse(Exception ex) {
 
 📌 **How it works**:
 
-**Real time example** - In simple terms, a **circuit breaker** is like a safety switch in a system that prevents it from repeatedly trying to do something that’s failing, which could make the situation worse.
-
-Imagine you're trying to plug an appliance into a socket, but the socket keeps sparking (failing). If you keep plugging it in, it could cause damage. So, you use a **circuit breaker** to cut off power to that socket temporarily. This gives the system time to recover before you try again.
-
-In the same way, in a microservices architecture, a circuit breaker monitors calls between services. If one service is failing (for example, it’s too slow or unavailable), the circuit breaker “opens” and stops the system from trying to call that service repeatedly. This helps avoid overloading the failing service and gives it time to recover.
-
-Once the service seems to be working again (after a timeout or a check), the circuit breaker "closes" and the system can try calling the service again.
-
+- **Real time example** - In simple terms, a **circuit breaker** is like a safety switch in a system that prevents it from repeatedly trying to do something that’s failing, which could make the situation worse.
+- Imagine you're trying to plug an appliance into a socket, but the socket keeps sparking (failing). If you keep plugging it in, it could cause damage. So, you use a **circuit breaker** to cut off power to that socket temporarily. This gives the system time to recover before you try again.
+- In the same way, in a microservices architecture, a circuit breaker monitors calls between services. If one service is failing (for example, it’s too slow or unavailable), the circuit breaker “opens” and stops the system from trying to call that service repeatedly. This helps avoid overloading the failing service and gives it time to recover.
+- Once the service seems to be working again (after a timeout or a check), the circuit breaker "closes" and the system can try calling the service again.
 - If the `order-service` fails multiple times, the circuit breaker **opens** and stops further calls.
 - Once the service recovers, the circuit breaker **closes**, allowing traffic again.
 
 ---
 
-### **2. Use Retry Mechanism for Temporary Failures**
+### <ins>2. Use Retry Mechanism for Temporary Failures</ins>
 
 If the failure is **intermittent**, retrying after a short delay can resolve the issue.
 
@@ -51,13 +52,11 @@ public ResponseEntity<String> callPaymentService() {
 
 📌 **How it works**:
 
-**Real time example: **In simple terms, imagine you're trying to make a phone call, but the line is temporarily bad and the call fails. Instead of hanging up immediately, you try calling again after a short pause, and eventually, the connection works.
+- **Real time example**: In simple terms, imagine you're trying to make a phone call, but the line is temporarily bad and the call fails. Instead of hanging up immediately, you try calling again after a short pause, and eventually, the connection works.
+- In a system, sometimes a failure is just temporary, like a service being momentarily slow or unavailable. Rather than giving up on the first failure, **Spring Retry** automatically tries to make the request again after a brief delay. It keeps retrying a few times before it gives up, hoping that the problem will resolve itself in the meantime.
+- This approach works well for **intermittent** issues, where a retry could succeed after a short delay. If the `payment-service` fails, the request will retry up to **3 times** with a **2-second delay**.
 
-In a system, sometimes a failure is just temporary, like a service being momentarily slow or unavailable. Rather than giving up on the first failure, **Spring Retry** automatically tries to make the request again after a brief delay. It keeps retrying a few times before it gives up, hoping that the problem will resolve itself in the meantime.
-
-This approach works well for **intermittent** issues, where a retry could succeed after a short delay. If the `payment-service` fails, the request will retry up to **3 times** with a **2-second delay**.
-
-### **3. Set Timeouts to Avoid Blocking Requests**
+### <ins>3. Set Timeouts to Avoid Blocking Requests</ins>
 
 If a service is unresponsive, requests may **hang indefinitely**. Timeouts ensure that failing services do not slow down the entire system.
 
@@ -73,15 +72,13 @@ public HttpComponentsClientHttpRequestFactory clientHttpRequestFactory() {
 }
 ```
 
-**Real time example** : In simple terms, imagine you're waiting in line at a coffee shop, and the barista is taking too long to make your coffee. Instead of waiting forever, you set a limit on how long you're willing to wait. If the coffee isn't ready in that time, you walk away.
-
-In a system, when one service takes too long to respond, it can slow down everything else. **Timeouts** are like setting a waiting limit for requests. If a service doesn’t respond within the set time, the system stops waiting and moves on, preventing other parts of the system from getting stuck. This keeps the system running smoothly instead of letting one slow service bring everything to a halt.
-
-If the service does not respond within **5 seconds**, the request is aborted.
+- **Real time example** : In simple terms, imagine you're waiting in line at a coffee shop, and the barista is taking too long to make your coffee. Instead of waiting forever, you set a limit on how long you're willing to wait. If the coffee isn't ready in that time, you walk away.
+- In a system, when one service takes too long to respond, it can slow down everything else. **Timeouts** are like setting a waiting limit for requests. If a service doesn’t respond within the set time, the system stops waiting and moves on, preventing other parts of the system from getting stuck. This keeps the system running smoothly instead of letting one slow service bring everything to a halt.
+- If the service does not respond within **5 seconds**, the request is aborted.
 
 ---
 
-### **4. Implement Fallback Mechanisms**
+### <ins>4. Implement Fallback Mechanisms</ins>
 
 When a service fails, **return a default response** or use a **cached response** instead.
 
@@ -95,23 +92,17 @@ public String fallbackOrderDetails(String orderId, Throwable ex) {
 
 **How it works**:
 
-**Real time example: **Absolutely! Here's the same example using **Celsius** instead of Fahrenheit:
-
-### **Example: Weather App with Celsius**
-
-Imagine you're using a weather app that fetches the current temperature from an external service. If the weather service goes down, instead of showing an error, the app can show the **last known weather report** (stored in cache) while the service is unavailable.
-
-For example:
-
-- **Last known report**: "Sunny, 24°C"
-- If the service fails, the app will show "Sunny, 24°C" from the cache, instead of displaying an error message or a blank screen.
-  This way, the user still gets a helpful, up-to-date temperature reading based on the last successful data retrieval, even if the weather service is temporarily down. It ensures the app remains useful while the service is unavailable.
-
+- **Real time example**: Absolutely! Here's the same example using Celsius instead of Fahrenheit:
+  - **Example: Weather App with Celsius** : Imagine you're using a weather app that fetches the current temperature from an external service. If the weather service goes down, instead of showing an error, the app can show the **last known weather report** (stored in cache) while the service is unavailable.
+  - For example:
+  - **Last known report**: "Sunny, 24°C"
+  - If the service fails, the app will show "Sunny, 24°C" from the cache, instead of displaying an error message or a blank screen.
+- This way, the user still gets a helpful, up-to-date temperature reading based on the last successful data retrieval, even if the weather service is temporarily down. It ensures the app remains useful while the service is unavailable.
 - If the order service is down, **return the last successful response from Redis**.
 
 ---
 
-### **5. Use Asynchronous Processing for Non-Critical Requests**
+### <ins>5. Use Asynchronous Processing for Non-Critical Requests</ins>
 
 Instead of **synchronous REST calls**, consider **event-driven communication** (Kafka, RabbitMQ) for better resilience.
 
@@ -123,18 +114,16 @@ rabbitTemplate.convertAndSend("order_exchange", "order.created", order);
 
 **How it works**:
 
-**Real time example:**
+- **Real time example:** Imagine you're signing up for a new account on a website. Normally, after you fill in your details, the website might wait for each step to complete, such as:
 
-Imagine you're signing up for a new account on a website. Normally, after you fill in your details, the website might wait for each step to complete, such as:
+  - **Create User** in the database
+  - **Send Email** for confirmation
+  - In a **synchronous** system, the website waits for the email service to send the confirmation email before showing you a success message. If the email service is slow or down, the whole user registration might fail, and you’ll have a bad experience.
 
-1. **Create User** in the database
-2. **Send Email** for confirmation
-   In a **synchronous** system, the website waits for the email service to send the confirmation email before showing you a success message. If the email service is slow or down, the whole user registration might fail, and you’ll have a bad experience.
+- With **event-driven communication**, the process works like this:
 
-With **event-driven communication**, the process works like this:
-
-1. **User Registration Service** receives your details and **immediately publishes an event** like "UserRegistered" to a message queue (Kafka or RabbitMQ).
-2. The **Email Service** listens for "UserRegistered" events, and when it gets one, it sends a confirmation email.
+  - **User Registration Service** receives your details and **immediately publishes an event** like "UserRegistered" to a message queue (Kafka or RabbitMQ).
+  - The **Email Service** listens for "UserRegistered" events, and when it gets one, it sends a confirmation email.
 
 - The order request is **queued** instead of blocking the request.
 - Other microservices (e.g., payment, inventory) **consume the event asynchronously**.
@@ -165,19 +154,24 @@ To handle failure recovery in a synchronous REST-based microservices architectur
 
 ---
 
-## **Q2:** In an e-commerce application, an order service calls payment and inventory services. How do you ensure that the order is placed only if both payment and inventory updates are successful?
+## ⚡️ Q2: In an e-commerce application, an order service calls payment and inventory services. How do you ensure that the order is placed only if both payment and inventory updates are successful?
 
-Ensuring that an order is placed **only if both payment and inventory updates are successful** in a **microservices architecture** requires a strategy for **distributed transactions** and **data consistency**. Since microservices do not share a single database, traditional ACID transactions are not feasible. Below are effective solutions:
+Ensuring that an order is placed only if both payment and inventory updates are successful in a microservices architecture requires a strategy for distributed transactions and data consistency. Since microservices do not share a single database, traditional ACID transactions are not feasible. Below are effective solutions:
 
-### **1. Use the Saga Pattern (Recommended)**
+1. [Use the Saga Pattern](#1-use-the-saga-pattern-recommended)
+2. [Use the Outbox Pattern](#2-use-the-outbox-pattern-avoid-inconsistencies)
+3. [Use Distributed Transactions with 2PC (Not Recommended)](#3-use-distributed-transactions-with-2pc-not-recommended)
+4. [Use Idempotency to Prevent Duplicate Orders](#4-use-idempotency-to-prevent-duplicate-orders)
+5. [Use Dead Letter Queues (DLQs) to Handle Failures](#5-use-dead-letter-queues-dlqs-to-handle-failures)
 
-The **Saga Pattern** ensures data consistency across multiple services through a sequence of **compensating transactions**.
+### <ins>1. Use the Saga Pattern (Recommended)</ins>
 
-**Two Saga Approaches:**
+- The Saga Pattern ensures data consistency across multiple services through a sequence of compensating transactions. Two Saga Approaches:
+
 1. **Choreography (Event-Driven)**
 2. **Orchestration (Centralized Controller)**
 
-Sure! Let's break down the difference between **Orchestration** and **Choreography** in terms of **steps**:
+![Microservice Flow](microservice.png)
 
 ### **1. Orchestration**
 
@@ -245,39 +239,38 @@ In a **food delivery app**:
 
 ---
 
-## **2. Use the Outbox Pattern (Avoid Inconsistencies)**
+### <ins>2. Use the Outbox Pattern (Avoid Inconsistencies)
 
 The **Outbox Pattern** is like a "safety net" for making sure that events are only sent out **after** a task is successfully completed. It helps avoid situations where something gets lost or doesn’t match up (called "inconsistencies").
 
-### **Real-World Example:**
+#### **Real-World Example:**
 
-Imagine you're at a restaurant and you place an order. The waiter writes down your order in a notebook (this is the **database**), but before your order is sent to the kitchen, the waiter has a "secret folder" (this is the **Outbox table**) where they also record the order (**within the same transaction**.) **just in case** something goes wrong.
+- Imagine you're at a restaurant and you place an order. The waiter writes down your order in a notebook (this is the **database**), but before your order is sent to the kitchen, the waiter has a "secret folder" (this is the **Outbox table**) where they also record the order (**within the same transaction**.) **just in case** something goes wrong.
+  - **Step 1:** When you place the order, the waiter writes it down in their notebook **and** immediately writes it in the secret folder (the Outbox table) with a note saying, "Order placed – needs to be sent to the kitchen."
+  - **Step 2:** A second person (like a kitchen runner) looks at the secret folder (Outbox table), sees that your order is listed, and then delivers the order to the kitchen.
+  - **Step 3:** If anything goes wrong (e.g., the waiter or kitchen runner forgets), the secret folder is still there as a backup. They can **retry** sending your order to the kitchen without worrying that the order was lost.
 
-- **Step 1:** When you place the order, the waiter writes it down in their notebook **and** immediately writes it in the secret folder (the Outbox table) with a note saying, "Order placed – needs to be sent to the kitchen."
-- **Step 2:** A second person (like a kitchen runner) looks at the secret folder (Outbox table), sees that your order is listed, and then delivers the order to the kitchen.
-- **Step 3:** If anything goes wrong (e.g., the waiter or kitchen runner forgets), the secret folder is still there as a backup. They can **retry** sending your order to the kitchen without worrying that the order was lost.
-
-### **In the system:**
+#### **In the system:**
 
 - **Outbox Table**: A special table that stores **events** (like "Order Created") that need to be sent to another service (like a payment system or inventory system).
 - The **event relay** (like a background worker or Debezium checks this table regularly and sends the event to the right service (like Kafka).
 - If the system crashes, the event is safe because it’s still in the **database** (the outbox). So, the system can try again later to send the event.
 
-### **Why It’s Useful:**
+#### **Why It’s Useful:**
 
 - **Avoids Inconsistencies**: It makes sure that if something goes wrong, the system can retry and won’t lose data (like an order or important event).
 - **Exactly Once Delivery**: It ensures that the event (like a new order) is only sent once and isn’t duplicated.
 
-### **Example in Code:**
+#### **Example in Code:**
 
-Let’s say you create an order in your **Order Service**. The event to notify other services is stored in the **Outbox table**:
+- Let’s say you create an order in your **Order Service**. The event to notify other services is stored in the **Outbox table**:
 
 ```sql
 INSERT INTO outbox (event_type, event_data, status)
 VALUES ('ORDER_CREATED', '{order details}', 'PENDING');
 ```
 
-Then, **Debezium** (or another tool) listens for changes in the **Outbox table** and sends the event (e.g., "Order Created") to **Kafka** for further processing.
+- Then, **Debezium** (or another tool) listens for changes in the **Outbox table** and sends the event (e.g., "Order Created") to **Kafka** for further processing.
 
 ### **Pros and Cons:**
 
@@ -287,13 +280,13 @@ Then, **Debezium** (or another tool) listens for changes in the **Outbox table**
 - **Cons**:
   - You need a **separate process** (like the event relay) to pick up and send the events, which can add complexity.
 
-### **In Summary**:
+#### **In Summary**:
 
-The **Outbox Pattern** is a way of safely storing events in a special table to ensure that they are only sent after the database action (like creating an order) is completed successfully. It helps ensure that nothing is lost, and even if something goes wrong, it can be retried later.
+- The **Outbox Pattern** is a way of safely storing events in a special table to ensure that they are only sent after the database action (like creating an order) is completed successfully. It helps ensure that nothing is lost, and even if something goes wrong, it can be retried later.
 
 ---
 
-## **3. Use Distributed Transactions with 2PC (Not Recommended)**
+### <ins>3. Use Distributed Transactions with 2PC (Not Recommended)<ins>
 
 **Two-Phase Commit (2PC)** locks resources until all services commit.
 
@@ -302,14 +295,13 @@ The **Outbox Pattern** is a way of safely storing events in a special table to e
 
 **Problems:**
 
-- [ ] **Not scalable** (locks resources).
-- [x] **Slow performance** due to global coordination.
-
-  **Avoid 2PC in microservices. Use Sagas instead.**
+- **Not scalable** (locks resources).
+- **Slow performance** due to global coordination.
+- ⚔️ **Avoid 2PC in microservices. Use Sagas instead.**
 
 ---
 
-## **4. Use Idempotency to Prevent Duplicate Orders**
+### <ins>4. Use Idempotency to Prevent Duplicate Orders</ins>
 
 If **retry mechanisms** exist, they may cause **duplicate orders**.
 
@@ -323,11 +315,10 @@ if (orderRepository.existsByTransactionId(request.getTransactionId())) {
 
 ---
 
-## **5. Use Dead Letter Queues (DLQs) to Handle Failures**
+### <ins>5. Use Dead Letter Queues (DLQs) to Handle Failures</ins>
 
-If a message (e.g., Payment event) fails **multiple times**, move it to a **Dead Letter Queue** for later processing.
-
-A **Dead Letter Queue (DLQ)** is a specialized queue where messages that fail multiple processing attempts are sent. This helps prevent message loss and allows for troubleshooting, debugging, and retrying messages later.
+- If a message (e.g., Payment event) fails **multiple times**, move it to a **Dead Letter Queue** for later processing.
+- A **Dead Letter Queue (DLQ)** is a specialized queue where messages that fail multiple processing attempts are sent. This helps prevent message loss and allows for troubleshooting, debugging, and retrying messages later.
 
 ### **How a DLQ Works**
 
@@ -343,22 +334,20 @@ A **Dead Letter Queue (DLQ)** is a specialized queue where messages that fail mu
    - Messages in the DLQ can be **inspected, fixed, or manually retried** later.
    - Some systems have automated retries with exponential backoff.
 
-**RabbitMQ DLQ Configuration:**
-
-```yaml
-x-dead-letter-exchange: "dlx.orders"
-x-dead-letter-routing-key: "orders.failed"
-```
-
 **Kafka DLQ Setup:**
 
 ```bash
-kafka-topics.sh --create --topic orders.DLQ --partitions 3 --replication-factor 1 --config "retention.ms=604800000"
+kafka-topics.sh
+    --create
+        --topic orders.DLQ
+    --partitions 3
+        --replication-factor 1
+        --config "retention.ms=604800000"
 ```
 
 ---
 
-## **🚀 Final Recommendations**
+### 🚀 Final Recommendations
 
 | **Problem**                                      | **Solution**                                  |
 | ------------------------------------------------ | --------------------------------------------- |
@@ -367,15 +356,20 @@ kafka-topics.sh --create --topic orders.DLQ --partitions 3 --replication-factor 
 | Avoid partial failures                           | **Outbox Pattern, Retry with Backoff**        |
 | Prevent message loss                             | **Dead Letter Queues (DLQs)**                 |
 
-**Best Approach: Use Saga Pattern with Outbox and Idempotency!**
+✅ **Best Approach: Use Saga Pattern with Outbox and Idempotency!**
 
-### **3. API Gateway and Security**
+## ⚡️ 3. API Gateway and Security
 
-**Ques - Your application exposes multiple microservices to the outside world. How would you ensure security, rate limiting, and request validation at the entry point?**
+Your application exposes multiple microservices to the outside world. How would you ensure security, rate limiting, and request validation at the entry point?
 
 ---
 
-### 1. **Security - JWT Authentication**
+1. [Security - JWT Authentication](#1-security---jwt-authentication)
+2. [Rate Limiting](#2-rate-limiting)
+3. [Request Validation](#3-request-validation)
+4. [Gateway Setup](#4-complete-gateway-setup)
+
+### <ins>1. Security - JWT Authentication</ins>
 
 To ensure security at the entry point, we'll use **JWT** for authentication. All incoming requests will need a valid JWT token to be processed.
 
@@ -461,9 +455,9 @@ public class JwtTokenUtil {
 
 ---
 
-### 2. **Rate Limiting**
+### <ins>2. Rate Limiting</ins>
 
-For rate limiting, you can use **Bucket4j** in Spring Cloud Gateway to throttle requests based on IP or user.
+- For rate limiting, you can use **Bucket4j** in Spring Cloud Gateway to throttle requests based on IP or user.
 
 #### Rate Limiting Configuration (`application.yml`):
 
@@ -484,16 +478,12 @@ cloud:
               redis-rate-limiter.requestedTokens: 1
 ```
 
-This setup uses **Redis Rate Limiter** with a replenish rate of 10 requests per second and burst capacity of 20 requests. This is applied to requests made to the `/users/**` endpoint.
-
-### **How It Works Behind the Scenes**
-
-1. A user sends **API requests**.
-2. **Redis** keeps track of how many requests they have made.
-3. If they exceed **10 per second**, new requests are **throttled (delayed) or blocked**.
-4. This ensures the system is **not overloaded**.
-
-Make sure you have Redis set up and Spring Data Redis dependency included.
+- This setup uses **Redis Rate Limiter** with a replenish rate of 10 requests per second and burst capacity of 20 requests. This is applied to requests made to the `/users/**` endpoint.
+- **How It Works Behind the Scenes**
+  - A user sends **API requests**.
+  - **Redis** keeps track of how many requests they have made.
+  - If they exceed **10 per second**, new requests are **throttled (delayed) or blocked**.
+  - This ensures the system is **not overloaded**.
 
 #### Add Redis Dependency in `pom.xml`:
 
@@ -510,9 +500,9 @@ Make sure you have Redis set up and Spring Data Redis dependency included.
 
 ---
 
-### 3. **Request Validation**
+### <ins>3. Request Validation</ins>
 
-You can validate incoming requests using **Spring Validation** annotations (e.g., `@Valid`, `@NotNull`, etc.) and interceptors in Spring Boot.
+- You can validate incoming requests using **Spring Validation** annotations (e.g., `@Valid`, `@NotNull`, etc.) and interceptors in Spring Boot.
 
 #### Example Request Validation:
 
@@ -535,7 +525,9 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@Valid @RequestBody UserRequest userRequest, BindingResult result) {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body("Invalid request parameters.");
+            return ResponseEntity
+                .badRequest()
+                .body("Invalid request parameters.");
         }
         // Proceed with processing
         return ResponseEntity.ok("User created successfully!");
@@ -566,11 +558,11 @@ public class ValidationConfig {
 }
 ```
 
-This ensures that the incoming request body is valid according to the constraints in `UserRequest` (e.g., `@NotNull`, `@Email`, `@Size`, etc.).
+- This ensures that the incoming request body is valid according to the constraints in `UserRequest` (e.g., `@NotNull`, `@Email`, `@Size`, etc.).
 
 ---
 
-### 4. **Complete Gateway Setup**
+### <ins>4. Complete Gateway Setup</ins>
 
 You can configure Spring Cloud Gateway with a combination of filters for authentication, rate-limiting, and request validation.
 
@@ -595,7 +587,7 @@ cloud:
           - name: RequestValidationFilter
 ```
 
-You can implement `JwtAuthenticationFilter` and `RequestValidationFilter` as custom filters in Spring Cloud Gateway.
+- You can implement `JwtAuthenticationFilter` and `RequestValidationFilter` as custom filters in Spring Cloud Gateway.
 
 #### Custom Authentication Filter:
 
@@ -641,42 +633,43 @@ In this approach:
 
 ---
 
-**Q7: How would you secure inter-service communication in a microservices architecture?**
+## ⚡️Q4: How would you secure inter-service communication in a microservices architecture?
 
-When security is applied at the **API Gateway** level (for external requests), securing **inter-service communication** within a microservices architecture requires a different approach. Since the API Gateway typically handles external traffic, inter-service communication security ensures that services within the system can communicate securely, even when the traffic is internal.
+- When security is applied at the **API Gateway** level (for external requests), securing **inter-service communication** within a microservices architecture requires a different approach. Since the API Gateway typically handles external traffic, inter-service communication security ensures that services within the system can communicate securely, even when the traffic is internal.
+- Here's how you can secure inter-service communication in a microservices architecture:
 
-Here's how you can secure inter-service communication in a microservices architecture:
+1. [Mutual TLS (mTLS) for Service-to-Service Authentication](#1-mutual-tls-mtls-for-service-to-service-authentication)
+2. [OAuth 2.0 / JWT for Token-Based Authentication](#2-oauth-20--jwt-for-service-authentication)
+3. [Service Mesh (e.g., Istio) for Advanced Security, Traffic Management, and Observability](#3-service-mesh-istio-linkerd)
+4. [API Gateway for Managing and Validating Internal Service-to-Service Communication](#4-api-gateway-for-internal-communication-security)
+5. [API Keys or Shared Secrets for Simpler Use Cases](#5-api-key-or-shared-secrets-for-inter-service-communication)
 
-### 1. **Mutual TLS (mTLS) for Service-to-Service Authentication**
+### <ins>1. Mutual TLS (mTLS) for Service-to-Service Authentication</ins>
 
-**Mutual TLS (mTLS)** is a mechanism in which both the client and the server authenticate each other using certificates. It ensures that only authorized services can communicate with each other, providing encryption and identity verification.
-
-Imagine you are visiting a **high-security office** where both **you** and the **security guard** need to verify each other's identity before entry.
+- **Mutual TLS (mTLS)** is a mechanism in which both the client and the server authenticate each other using certificates. It ensures that only authorized services can communicate with each other, providing encryption and identity verification.
+- Imagine you are visiting a **high-security office** where both **you** and the **security guard** need to verify each other's identity before entry.
 
 🔹 **Normal TLS (One-Way Authentication)**
-
 - You show your **ID card** to the security guard.
 - The guard checks your ID and lets you in.
 - But you **don’t verify** if the guard is legit.
 - This is how standard TLS (SSL) works—your browser verifies a website, but the website doesn’t verify you.
-  🔹 **Mutual TLS (mTLS - Two-Way Authentication)**
 
+🔹 **Mutual TLS (mTLS - Two-Way Authentication)**
 - You show your **ID card** to the security guard.
 - The security guard also shows **his ID card** to you.
 - Both of you confirm each other's identity before proceeding.
 - This ensures **mutual trust** between both parties.
-  👉 **mTLS is just this, but for computers talking to each other!**
-  It ensures that **both services verify each other’s identity** before exchanging data.
 
-### **How mTLS Works in a Web App?**
+👉 mTLS is just this, but for computers talking to each other!. It ensures that both services verify each other’s identity before exchanging data.
 
-1️⃣ **Client (Service A) sends a request** to **Service B**.
-2️⃣ **Service B presents its TLS certificate** to prove its identity.
-3️⃣ **Service A also presents its certificate** to prove its identity.
-4️⃣ If both certificates are valid, **they establish a secure connection** and start communication.
-5️⃣ If one fails, the connection is **denied** to prevent fraud.
+#### **How mTLS Works in a Web App?**
 
-l
+- **Client (Service A) sends a request** to **Service B**.
+- **Service B presents its TLS certificate** to prove its identity.
+- **Service A also presents its certificate** to prove its identity.
+- If both certificates are valid, **they establish a secure connection** and start communication.
+- If one fails, the connection is **denied** to prevent fraud.
 
 #### Steps:
 
@@ -684,19 +677,16 @@ l
 - **Configure each microservice** to present its certificate when making requests and verify the certificate of the receiving service.
 - **Use a service mesh** like **Istio** or **Linkerd**, which automatically handles mTLS for service-to-service communication.
 
-### **Example: Enabling mTLS in Spring Boot**
+#### Example: Enabling mTLS in Spring Boot
 
-#### **Step 1: Generate Certificates**
-
-Both services need their **own certificates** using OpenSSL:
+- #### Step 1: Generate Certificates - Both services need their **own certificates** using OpenSSL:
 
 ```sh
 openssl req -new -x509 -days 365 -keyout serviceA.key -out serviceA.crt
 openssl req -new -x509 -days 365 -keyout serviceB.key -out serviceB.crt
 ```
 
-#### **Step 2: Configure mTLS in Spring Boot (**`**application.yml**`**)**
-
+- #### Step 2: Configure mTLS in Spring Boot (**`**application.yml**`**)
 ```yaml
 server:
   port: 8443
@@ -711,9 +701,9 @@ server:
 
 ---
 
-### 2. **OAuth 2.0 / JWT for Service Authentication**
+### <ins>2. OAuth 2.0 / JWT for Service Authentication</ins>
 
-Another approach is to use **OAuth 2.0** or **JWT (JSON Web Tokens)** to authenticate and authorize service-to-service communication.
+- Another approach is to use **OAuth 2.0** or **JWT (JSON Web Tokens)** to authenticate and authorize service-to-service communication.
 
 #### How it works:
 
@@ -723,9 +713,9 @@ Another approach is to use **OAuth 2.0** or **JWT (JSON Web Tokens)** to authent
 
 #### Example using JWT Authentication:
 
-**Service A** makes a request to **Service B** with a JWT token:// Service A: Obtain a JWT token (from IdP)
+- **Service A** makes a request to **Service B** with a JWT token:// Service A: Obtain a JWT token (from IdP)
 
-```
+```java
 String token = authService.getJwtTokenForServiceB();
 
 // Send the token as Authorization header
@@ -735,12 +725,16 @@ headers.set("Authorization", "Bearer " + token);
 HttpEntity<String> entity = new HttpEntity<>(headers);
 
 ResponseEntity<String> response = restTemplate.exchange(
-        "https://service-b.local/api/endpoint", HttpMethod.GET, entity, String.class);
+        "https://service-b.local/api/endpoint", 
+        HttpMethod.GET, 
+        entity,
+        String.class
+    );
 ```
 
-**Service B** validates the JWT token:**JWT Token Validation** (`JwtTokenUtil` ):
+- **Service B** validates the JWT token:**JWT Token Validation** (`JwtTokenUtil` ):
 
-```
+```java
 @RestController
 public class ServiceBController {
 
@@ -756,11 +750,11 @@ public class ServiceBController {
 }
 ```
 
-```
+```java
 @Component
 public class JwtTokenUtil {
-
-    private String secretKey = "your_secret_key";  // Securely store this key
+    // Securely store this key
+    private String secretKey = "your_secret_key";  
 
     public boolean validateToken(String token) {
         try {
@@ -775,21 +769,19 @@ public class JwtTokenUtil {
 
 ---
 
-### 3. **Service Mesh (Istio, Linkerd)**
+### <ins>3. Service Mesh (Istio, Linkerd)</ins>
 
-A **Service Mesh** provides a dedicated infrastructure layer to handle service-to-service communication, security, observability, and more. **Istio** is a popular choice for securing inter-service communication with mTLS, traffic management, and monitoring.
+- A **Service Mesh** provides a dedicated infrastructure layer to handle service-to-service communication, security, observability, and more. **Istio** is a popular choice for securing inter-service communication with mTLS, traffic management, and monitoring.
 
-### **What is a Service Mesh (Istio, Linkerd) in Simple Terms?**
+#### **What is a Service Mesh (Istio, Linkerd) in Simple Terms?**
 
-🔹 **Imagine a Delivery Network (Swiggy/Zomato)**
-
+**Imagine a Delivery Network (Swiggy/Zomato)**
 - You have **restaurants (services)** preparing food.
 - You have **delivery agents (service mesh)** handling communication (picking up and delivering orders).
 - The **customers (users)** don’t talk directly to the restaurants; they rely on the **delivery agents** to route their order correctly.
-  Similarly, in a **microservices architecture**:
-
-- Services **don’t talk to each other directly**.
-- Instead, a **Service Mesh (like Istio or Linkerd) acts as the “delivery network”**, managing how services communicate securely, efficiently, and reliably.
+- Similarly, in a **microservices architecture**:
+    - Services **don’t talk to each other directly**.
+    - Instead, a **Service Mesh (like Istio or Linkerd) acts as the “delivery network”**, managing how services communicate securely, efficiently, and reliably.
 
 #### Key Features:
 
@@ -799,9 +791,9 @@ A **Service Mesh** provides a dedicated infrastructure layer to handle service-t
 
 ---
 
-### 4. **API Gateway for Internal Communication Security**
+### <ins>4. API Gateway for Internal Communication Security</ins>
 
-If you don't want to use a service mesh or mTLS directly, you can also secure internal communication through the **API Gateway** (e.g., Spring Cloud Gateway).
+- If you don't want to use a service mesh or mTLS directly, you can also secure internal communication through the **API Gateway** (e.g., Spring Cloud Gateway).
 
 - The API Gateway can authenticate inter-service calls using **JWT** or **OAuth 2.0**, just as it does for external traffic.
 - You can configure the gateway to validate tokens and enforce security policies for internal requests.
@@ -810,41 +802,48 @@ If you don't want to use a service mesh or mTLS directly, you can also secure in
 
 - **Service A** sends a request to **Service B** via the Gateway:
 
-```
+```java
 String token = authService.getJwtTokenForServiceB();
 headers.set("Authorization", "Bearer " + token);
 
 HttpEntity<String> entity = new HttpEntity<>(headers);
 ResponseEntity<String> response = restTemplate.exchange(
-        "http://gateway/service-b/api/endpoint", HttpMethod.GET, entity, String.class);
+        "http://gateway/service-b/api/endpoint", 
+        HttpMethod.GET, 
+        entity, 
+        String.class
+    );
 ```
 
 - **Gateway** validates JWT and forwards the request to **Service B**.
 
 ---
 
-### 5. **API Key or Shared Secrets for Inter-Service Communication**
+### <ins>5. API Key or Shared Secrets for Inter-Service Communication</ins>
 
 For smaller applications or less complex needs, you can use **API Keys** or **shared secrets** for inter-service communication.
 
 - **API Key**: Each service has a unique API key used when making requests to other services.
 - **Shared Secrets**: A secret string (or token) is shared between services and included in the headers of the request.
 
-#### Example Using API Keys:
-
+- Example Using API Keys:
 - **Service A** sends a request with the API key:
 
-```
+```java
 HttpHeaders headers = new HttpHeaders();
 headers.set("x-api-key", "ServiceA-SecretKey");
 HttpEntity<String> entity = new HttpEntity<>(headers);
 ResponseEntity<String> response = restTemplate.exchange(
-        "http://service-b.local/api/endpoint", HttpMethod.GET, entity, String.class);
+        "http://service-b.local/api/endpoint",
+        HttpMethod.GET,
+        entity,
+        String.class
+    );
 ```
 
-**Service B** verifies the API key:
+- **Service B** verifies the API key:
 
-```
+```java
 @RestController
 public class ServiceBController {
 
@@ -873,43 +872,45 @@ To secure inter-service communication, you can leverage various strategies:
 5. **API Keys** or **Shared Secrets** for simpler use cases.
    The appropriate method depends on your application's scale, complexity, and security requirements.
 
-### **5. Database Management in Microservices**
+## ⚡️Q5. Database Management in Microservices**
 
-**Ques: You have a user service and an order service, each with its own database. How do you handle queries that require joining data from both +**
-
-**databases?**
-
-In a microservices architecture where each service has its own database, performing a **join** cross different databases (for example, joining data from a **user service** and an **order service**) can be complex.
-
-Microservices are typically designed to avoid tight coupling, which means that a traditional SQL `JOIN` across different databases is not a good fit.
-
-Instead, you can handle this scenario by using some **event-driven** or **data duplication** strategies to provide a way to combine data from multiple services. Below are several approaches to handle such queries in a microservices environment:
+You have a user service and an order service, each with its own database. How do you handle queries that require joining data from both databases?
 
 ---
 
-### 1. **API Composition**
+- In a microservices architecture where each service has its own database, performing a **join** cross different databases (for example, joining data from a **user service** and an **order service**) can be complex.
+- Microservices are typically designed to avoid tight coupling, which means that a traditional SQL `JOIN` across different databases is not a good fit.
+- Instead, you can handle this scenario by using some **event-driven** or **data duplication** strategies to provide a way to combine data from multiple services. Below are several approaches to handle such queries in a microservices environment:
 
-API composition is a pattern in which a request to a microservice is handled by calling multiple services and aggregating the results in the API Gateway or a separate service. This is a simple and commonly used solution when you need to combine data from multiple services.
+---
 
-Imagine you order food from **Swiggy/Zomato**:
+1. [API Composition](#1-api-composition)
+2. [Database Replication (Denormalization)](#2-database-replication-denormalization)
+3. [CQRS(Command Query Responsibility Segregation) and Event Sourcing](#3-cqrs-command-query-responsibility-segregation-and-event-sourcing)
+4. [Data Federation(GraphQL, Kafka, etc.)](#4-data-federation)
+5. [Materialized View (Data Warehousing)](#5-materialized-views-data-warehousing)
 
-- You want to see **restaurant details**, **menu**, and **delivery time** **on one screen**.
-- But this data comes from **different services**: - 📍 **Restaurant Service** → Gives restaurant name & location. - 🍕 **Menu Service** → Provides the list of dishes. - 🚴 **Delivery Service** → Calculates delivery time.
-  Instead of calling each service separately, **Swiggy’s API Gateway** **fetches and combines** all data into **one response**.
+### <ins>1. API Composition</ins>
+- API composition is a pattern in which a request to a microservice is handled by calling multiple services and aggregating the results in the API Gateway or a separate service. This is a simple and commonly used solution when you need to combine data from multiple services.
+- Imagine you order food from **Swiggy/Zomato**:
+    - You want to see **restaurant details**, **menu**, and **delivery time** **on one screen**.
+    - But this data comes from **different services**: 
+    - **Restaurant Service** → Gives restaurant name & location. 
+    - **Menu Service** → Provides the list of dishes. 
+    - **Delivery Service** → Calculates delivery time.
+    - Instead of calling each service separately, **Swiggy’s API Gateway** **fetches and combines** all data into **one response**.
 
-### **How API Composition Works in Microservices?**
+#### **How API Composition Works in Microservices?**
 
-🔹 A **single request** comes to the API Gateway.
-🔹 The **API Gateway calls multiple services** (like User Service, Order Service, Payment Service).
-🔹 It **merges the results** and **sends one response** to the user.
+- A **single request** comes to the API Gateway.
+- The **API Gateway calls multiple services** (like User Service, Order Service, Payment Service).
+- It **merges the results** and **sends one response** to the user.
 
 #### Example:
-
-If a user wants to see their orders along with user details, you can make two API calls:
-
-1. Call the **User Service** to fetch user details.
-2. Call the **Order Service** to fetch the user’s orders.
-3. Aggregate both responses and return the combined result.
+- If a user wants to see their orders along with user details, you can make two API calls:
+    - Call the **User Service** to fetch user details.
+    - Call the **Order Service** to fetch the user’s orders.
+    - Aggregate both responses and return the combined result.
 
 #### Code Example:
 
@@ -925,11 +926,19 @@ public class UserOrderController {
     public ResponseEntity<Map<String, Object>> getUserOrders(@PathVariable("userId") String userId) {
         // Call User Service to get user details
         ResponseEntity<User> userResponse = restTemplate.exchange(
-                "http://user-service/users/" + userId, HttpMethod.GET, null, User.class);
+                "http://user-service/users/" + userId, 
+                HttpMethod.GET, 
+                null, 
+                User.class
+            );
 
         // Call Order Service to get orders for the user
         ResponseEntity<List<Order>> orderResponse = restTemplate.exchange(
-                "http://order-service/orders?userId=" + userId, HttpMethod.GET, null, new ParameterizedTypeReference<List<Order>>() {});
+                "http://order-service/orders?userId=" + userId, 
+                HttpMethod.GET, 
+                null, 
+                new ParameterizedTypeReference<List<Order>>() {}
+            );
 
         // Combine the user details and orders
         Map<String, Object> response = new HashMap<>();
@@ -948,32 +957,31 @@ public class UserOrderController {
 
 ---
 
-### 2. **Database Replication (Denormalization)**
+#### 2. <ins>Database Replication (Denormalization)</ins>
 
-You can replicate some data from one service’s database into the other service’s database. This approach is also known as **denormalization**. For example, the **Order Service** can store **user details** or a **user ID** as part of the order, which reduces the need for cross-service queries.
+- You can replicate some data from one service’s database into the other service’s database. This approach is also known as **denormalization**. For example, the **Order Service** can store **user details** or a **user ID** as part of the order, which reduces the need for cross-service queries.
 
-In this case:
+- In this case:
+    - **User Service** can push user data updates to the **Order Service** (via an event, for example).
+    - The **Order Service** will have some form of data duplication to make queries faster and avoid joining across databases.
+- Steps:
+    - 1. When a new **Order** is placed, the **Order Service** receives the order and stores it, including a reference (e.g., `userId` ) to the **User** data.
+    - 2. The **User Service** will send an event (e.g., `UserUpdatedEvent` ) to notify the **Order Service** of any updates to user data (using event-driven mechanisms like **Kafka**, **RabbitMQ**, etc.).
+    - 3. The **Order Service** stores relevant user data or the user ID within its own database to avoid cross-service querying.
 
-- **User Service** can push user data updates to the **Order Service** (via an event, for example).
-- The **Order Service** will have some form of data duplication to make queries faster and avoid joining across databases.
+- Example:
+    - If you need to join data from the **User** and **Order** services, the **Order** service can keep a copy of the **user’s name** or **email** along with the order, so you don’t need to query the **User Service** each time.
 
-#### Steps:
-
-1. When a new **Order** is placed, the **Order Service** receives the order and stores it, including a reference (e.g., `userId` ) to the **User** data.
-2. The **User Service** will send an event (e.g., `UserUpdatedEvent` ) to notify the **Order Service** of any updates to user data (using event-driven mechanisms like **Kafka**, **RabbitMQ**, etc.).
-3. The **Order Service** stores relevant user data or the user ID within its own database to avoid cross-service querying.
-
-#### Example:
-
-If you need to join data from the **User** and **Order** services, the **Order** service can keep a copy of the **user’s name** or **email** along with the order, so you don’t need to query the **User Service** each time.
 
 #### Code Example:
-
 ```java
 public class OrderService {
     public Order createOrder(OrderRequest request) {
         // Order service keeps a reference of user data like userId
-        Order order = new Order(request.getOrderDetails(), request.getUserId());
+        Order order = new Order(
+            request.getOrderDetails(), 
+            request.getUserId()
+        );
         orderRepository.save(order);
 
         // Send an event to update or notify the user service for consistency
@@ -991,39 +999,33 @@ public class OrderService {
 
 ---
 
-### 3. **CQRS (Command Query Responsibility Segregation) and Event Sourcing**
+### <ins>3. CQRS (Command Query Responsibility Segregation) and Event Sourcing</ins>
 
-Using **CQRS** and **Event Sourcing** allows you to have a read-optimized view that may combine data from multiple services.
+- Using **CQRS** and **Event Sourcing** allows you to have a read-optimized view that may combine data from multiple services.
 
-#### Steps:
+- Steps:
+    - In CQRS, you have separate models for reads and writes. The write model (command model) updates data in the respective databases (e.g., `User Service` and `Order Service` ).
+    - The read model (query model) is designed for fast retrieval of aggregated data from multiple services, often using a separate read-optimized database or cache.
 
-- In CQRS, you have separate models for reads and writes. The write model (command model) updates data in the respective databases (e.g., `User Service` and `Order Service` ).
-- The read model (query model) is designed for fast retrieval of aggregated data from multiple services, often using a separate read-optimized database or cache.
-
-#### Example:
-
-- When a new order is created, the **Order Service** updates its database.
-- The **Event Store** (e.g., Kafka, RabbitMQ) receives events for the newly created order and user information.
-- A **Read Model** service listens to these events and creates a **denormalized view** that includes user and order information for efficient querying.
+- Example:
+    - When a new order is created, the **Order Service** updates its database.
+    - The **Event Store** (e.g., Kafka, RabbitMQ) receives events for the newly created order and user information.
+    - A **Read Model** service listens to these events and creates a **denormalized view** that includes user and order information for efficient querying.
 
 #### Considerations:
-
 - **Complexity**: This approach adds complexity due to managing separate models for reading and writing.
 - **Data Consistency**: This pattern works well for eventual consistency where real-time consistency isn't a strict requirement.
 
 ---
 
-### 4. **Data Federation**
+### <ins>4. Data Federation</ins>
+- A **data federation** solution can create a unified query layer that can fetch data from multiple microservices and provide it in a single response. A **data federation** solution can create a unified query layer that can fetch data from multiple microservices and provide it in a single response.
+- In this approach:
+    - A query layer (possibly an API Gateway or dedicated service) communicates with both the **User Service** and **Order Service**.
+    - The service then **federates** the results, combining data from multiple services and returning it in a unified response.
+    - For example, using **GraphQL** can help achieve this federation pattern, as GraphQL allows you to define a unified schema that queries multiple backends (services).
 
-A **data federation** solution can create a unified query layer that can fetch data from multiple microservices and provide it in a single response. A **data federation** solution can create a unified query layer that can fetch data from multiple microservices and provide it in a single response.
-
-In this approach:
-
-- A query layer (possibly an API Gateway or dedicated service) communicates with both the **User Service** and **Order Service**.
-- The service then **federates** the results, combining data from multiple services and returning it in a unified response.
-  For example, using **GraphQL** can help achieve this federation pattern, as GraphQL allows you to define a unified schema that queries multiple backends (services).
-
-#### Example (using GraphQL Federation):
+- Example (using GraphQL Federation):
 
 ```graphql
 type User {
@@ -1052,26 +1054,23 @@ extend type Query {
 
 ### **Difference Between Data Federation and API Composition** 🚀
 
-| Feature                        | <p>**Data Federation**</p><p> 🏛</p>                                                                                | <p>**API Composition**</p><p> 🔗</p>                                                                                      |
+| Feature                        | **Data Federation** 🏛                                                                                | **API Composition** 🔗                                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Definition**                 | <p>Fetching & combining data from multiple databases </p><p>**at query time**</p><p>.</p>                          | <p>Fetching & merging data from multiple </p><p>**microservices**</p><p> via APIs.</p>                                    |
-| **Where does Data Come From?** | <p>**Databases, data sources, or data warehouses**</p><p>.</p>                                                     | <p>**APIs of different microservices**</p><p>.</p>                                                                        |
-| **Real-Time or Stored?**       | <p>Always </p><p>**real-time**</p><p> (queries databases directly).</p>                                            | <p>Data may come from </p><p>**real-time APIs**</p><p> or </p><p>**cached responses**</p><p>.</p>                         |
-| **Example Use Case**           | <p>A hospital system fetching </p><p>**patient records from multiple hospital databases**</p><p> in real-time.</p> | <p>An </p><p>**e-commerce API fetching product details, reviews, and stock info**</p><p> from multiple microservices.</p> |
+| **Definition**                 | Fetching & combining data from multiple databases at query time                         | Fetching & merging data from multiple **microservices** via APIs.                                    |
+| **Where does Data Come From?** | **Databases, data sources, or data warehouses                                                    | APIs of different microservices                                                                       |
+| **Real-Time or Stored?**       | Always **real-time** (queries databases directly).                                            | Data may come from **real-time APIs** or cached responses                        |
+| **Example Use Case**           | A hospital system fetching **patient records from multiple hospital databases** in real-time. | An **e-commerce API fetching product details, reviews, and stock info** from multiple microservices. |
 | **Technology Used**            | GraphQL, Presto, Trino, SQL engines.                                                                               | API Gateways, Backend-for-Frontend (BFF), REST, GraphQL.                                                                  |
-| **Best For**                   | <p>Querying </p><p>**distributed databases**</p><p> dynamically without moving data.</p>                           | <p>Combining </p><p>**API responses**</p><p> from microservices into a single response.</p>                               |
+| **Best For**                   | Querying **distributed databases** dynamically without moving data.                           | Combining **API responses** from microservices into a single response.                               |
 
 ---
 
-### 5. **Materialized Views (Data Warehousing)**
-
-Another approach is to create a **materialized view** that combines data from both the **User Service** and the **Order Service** into a dedicated reporting database or read-only view.
-
-#### Steps:
-
-- Periodically (or in real-time), data from the **User Service** and **Order Service** is replicated or copied into a separate **reporting** or **read-only database**.
-- You can use ETL (Extract, Transform, Load) processes to synchronize data into this centralized read database.
-- Queries are then run against the materialized view in the read database, avoiding joins across multiple microservices' databases.
+### <ins>5. Materialized Views (Data Warehousing)</ins>
+- Another approach is to create a **materialized view** that combines data from both the **User Service** and the **Order Service** into a dedicated reporting database or read-only view.
+- Steps:
+    - Periodically (or in real-time), data from the **User Service** and **Order Service** is replicated or copied into a separate **reporting** or **read-only database**.
+    - You can use ETL (Extract, Transform, Load) processes to synchronize data into this centralized read database.
+    - Queries are then run against the materialized view in the read database, avoiding joins across multiple microservices' databases.
 
 #### Considerations:
 
@@ -1080,7 +1079,7 @@ Another approach is to create a **materialized view** that combines data from bo
 
 ---
 
-### Conclusion:
+#### Conclusion:
 
 To handle queries that require joining data from multiple services' databases in a microservices architecture, you can:
 
@@ -1093,7 +1092,7 @@ To handle queries that require joining data from multiple services' databases in
 
 ---
 
-You’re leading a team managing an e-commerce platform built using microservices. The architecture consists of the following services:
+## ⚡️ Q6. You’re leading a team managing an e-commerce platform built using microservices. The architecture consists of the following services:
 
 - **Order Service**
 - **Payment Service**
@@ -1105,89 +1104,62 @@ You’re leading a team managing an e-commerce platform built using microservice
 2. The **Order Service** occasionally creates duplicate orders for the same request.
 3. The **Notification Service** sends multiple emails for the same order.
 
-#### **Questions for Discussion:**
 
-1. **How would you debug and identify the root cause of these issues?**
-2. **How would you address the eventual consistency problem in such a system?**
-3. **What architectural patterns would you use to prevent duplicate orders and emails?**
-4. **How would you ensure that the system remains resilient and does not lose data in the case of service failures?**
-5. **How would you improve the observability of this system to detect such issues earlier?**
 
-### **Expected Approach/Answer**
-
-#### **1. Debugging the Root Cause:**
-
+### <ins>1. How would you debug and identify the root cause of these issues?</ins>
 - Analyze logs and traces using tools like **ELK Stack**, **Jaeger**, or **Zipkin**.
 - Identify whether the issues stem from **network delays**, **idempotency violations**, or **message queue retries**.
 - Check database transactions for duplicate inserts or incomplete states.
 
-#### **2. Addressing Eventual Consistency:**
-
+### <ins>2. How would you address the eventual consistency problem in such a system?</ins>
 - Use the **Saga pattern** to orchestrate distributed transactions (choreography or orchestration).
 - Implement **retry mechanisms** with exponential backoff for failed processes.
 - Utilize **message queues** (e.g., Kafka) to ensure reliable event delivery between services.
 
-#### **3. Preventing Duplicate Orders and Emails:**
+### <ins> 3. What architectural patterns would you use to prevent duplicate orders and emails? </ins>
 
 - Enforce **idempotency keys** for APIs to ensure that duplicate requests don’t result in duplicate processing.
 - Use distributed locks or deduplication logic in the **Order Service**.
 - Add a unique event ID for messages in the **Notification Service** to avoid processing the same event multiple times.
 
-#### **4. Ensuring Resilience and Data Integrity:**
-
+### <ins> 4. How would you ensure that the system remains resilient and does not lose data in the case of service failures?</ins>
 - Implement **circuit breakers** (e.g., Resilience4j) to handle cascading failures.
 - Use **persistent message queues** to guarantee that events aren’t lost during service downtime.
 - Introduce a **dead letter queue (DLQ)** for failed messages requiring manual or automated retries.
 
-#### **5. Improving Observability:**
-
+### <ins> 5. How would you improve the observability of this system to detect such issues earlier? </ins>
 - Set up **distributed tracing** to follow the journey of a request across services.
 - Add **custom metrics** for critical business flows (e.g., order creation, payment processing).
 - Implement **real-time alerts** for anomalies, such as spikes in duplicate orders or email notifications.
 
 ---
 
-### **Q3:** How would you handle eventual consistency in a distributed system where multiple services update different parts of a business transaction? 2. Service Discovery and Load Balancing
+## ⚡️ Additional Questions:
 
-### **Q4:** Your microservices need to dynamically discover each other without hardcoding URLs. How would you implement service discovery?
+#### Q1: How would you handle eventual consistency in a distributed system where multiple services update different parts of a business transaction? 2. Service Discovery and Load Balancing
 
-### **Q5:** If a service instance is experiencing high load, how do you ensure traffic is evenly distributed across multiple instances?
+#### Q2: Your microservices need to dynamically discover each other without hardcoding URLs. How would you implement service discovery?
 
----
+#### Q3: If a service instance is experiencing high load, how do you ensure traffic is evenly distributed across multiple instances?
 
-#### **3. API Gateway and Security**
+#### Q4: Your application exposes multiple microservices to the outside world. How would you ensure security, rate limiting, and request validation at the entry point?
 
-**Q6:** Your application exposes multiple microservices to the outside world. How would you ensure security, rate limiting, and request validation at the entry point?
-**Q7:** How would you secure inter-service communication in a microservices architecture?
+#### Q5: How would you secure inter-service communication in a microservices architecture?
 
----
+#### Q6: One of your microservices is calling an external third-party API, which becomes slow. How would you prevent cascading failures in your system?
 
-#### **4. Fault Tolerance and Resilience**
+#### Q7: How would you implement a circuit breaker pattern in a Spring Boot microservice?
 
-**Q8:** One of your microservices is calling an external third-party API, which becomes slow. How would you prevent cascading failures in your system?
-**Q9:** How would you implement a circuit breaker pattern in a Spring Boot microservice?
+#### Q8: How do you ensure data consistency across multiple microservices using different databases?
 
----
+#### Q9: Your application needs to notify multiple services when an event occurs (e.g., a new order is placed). How would you design this system?
 
-**Q11:** How do you ensure data consistency across multiple microservices using different databases?
+#### Q10: What are the advantages and challenges of using Kafka for event-driven microservices?
 
----
+#### Q11: How would you deploy microservices with zero downtime?
 
-#### **6. Event-Driven Architecture**
+#### Q12: Your microservices are running in Kubernetes. How do you roll back to a previous version if a new deployment has issues?
 
-**Q12:** Your application needs to notify multiple services when an event occurs (e.g., a new order is placed). How would you design this system?
-**Q13:** What are the advantages and challenges of using Kafka for event-driven microservices?
+#### Q13: How do you trace a request that goes through multiple microservices?
 
----
-
-#### **7. CI/CD and Deployment Strategies**
-
-**Q14:** How would you deploy microservices with zero downtime?
-** Q15:** Your microservices are running in Kubernetes. How do you roll back to a previous version if a new deployment has issues?
-
----
-
-#### **8. Observability, Monitoring, and Logging**
-
-**Q16:** How do you trace a request that goes through multiple microservices?
-**Q17:** How would you centralize logs for all microservices and analyze errors efficiently?
+#### Q14: How would you centralize logs for all microservices and analyze errors efficiently?
