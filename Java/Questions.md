@@ -271,9 +271,10 @@ map.put("a",1);
 
 ---
 
-## 34-35. User-defined exceptions
+## 34. User-defined exceptions
 
 - Custom exception classes extending Exception/RuntimeException.
+- Exception - checked (compile-time) , RuntimeException - unchecked (run-time).
 
 ```java
 class MyException extends Exception {
@@ -281,6 +282,38 @@ class MyException extends Exception {
         super(msg);
     }
 }
+```
+
+## 35. Exception Hierarchy
+
+- In Java, all exceptions inherit from the Throwable class, which has two main branches: `Error` and `Exception`.
+    - `Error` represents serious problems (like OutOfMemoryError) that applications should not try to handle.
+    - `Exception` is for conditions that applications might want to catch and handle.
+
+- Under Exception, we have:
+    - Checked exceptions – Must be declared in method signatures or caught. Example: `IOException`, `SQLException`.
+    - Unchecked exceptions – Subclasses of RuntimeException, which the compiler does not force you to handle. Example: `NullPointerException`, `IllegalArgumentException`.
+
+```
+java.lang.Throwable
+│
+├── Error (Unrecoverable, system-level errors)
+│   └── OutOfMemoryError, StackOverflowError, etc.
+│
+└── Exception (Recoverable, application-level errors)
+    │
+    ├── Checked Exceptions (Must be declared or caught)
+    │   ├── IOException
+    │   ├── SQLException
+    │   ├── ClassNotFoundException
+    │   └── CustomCheckedException (extends Exception)
+    │
+    └── Unchecked Exceptions (Runtime exceptions)
+        ├── NullPointerException
+        ├── IllegalArgumentException
+        ├── IndexOutOfBoundsException
+        ├── ArithmeticException
+        └── CustomUncheckedException (extends RuntimeException)
 ```
 
 ---

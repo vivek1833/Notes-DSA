@@ -670,3 +670,32 @@ public class User {
 - ✅ Use `@Where(clause = "is_deleted = false")` to automatically exclude deleted entities.
 - ✅ Use `@SQLDelete` to override the delete query and mark records as deleted instead of removing them.
 - ✅ Be aware of caching issues, cascading deletes, and `JOIN` queries that may still fetch deleted data.
+
+
+--- 
+## Q5. JPA vs Hibernate
+
+### ✅ Short Answer (for quick interviews):
+
+- JPA is a specification, while Hibernate is an implementation of that specification.
+- JPA defines the standards for object-relational mapping (ORM) in Java, and Hibernate is one of the most popular frameworks that implements those standards - and also provides extra features beyond JPA.
+
+### ✅ Detailed Answer (for in-depth interviews):
+
+1. JPA (Java Persistence API):
+- It's a Java specification (defined in `javax.persistence` or `jakarta.persistence`).
+- It provides a set of interfaces and annotations for ORM — like `@Entity`, `@Table`, `@Id`, `EntityManager`, etc.
+- It is part of the Jakarta EE (formerly Java EE) standard.
+- JPA itself does not provide any implementation — you need a provider (like Hibernate, EclipseLink, etc.) to actually perform persistence operations.
+
+2. Hibernate:
+- It's a framework that provides a concrete implementation of JPA.
+- It also offers additional features beyond JPA, such as:
+- Better caching mechanisms (2nd level cache)
+- Improved lazy loading
+- Native SQL query support
+- Custom types and interceptors
+- Hibernate existed before JPA and heavily influenced its creation.
+
+✅ Analogy:
+- Think of JPA as a set of rules, and Hibernate as a tool that follows those rules  and adds its own tools on top.
