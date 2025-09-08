@@ -139,3 +139,49 @@ System.out.println(randomSupplier.get());
 - [Java 8 Functional Interfaces](https://docs.oracle.com/javase/8/docs/api/java/util/function/package-summary.html)
 
 ---
+
+## 📙 Practice Questions
+
+### 🔹 Easy Level (Basics & Syntax)
+
+- Write a program to create a list of integers and:
+  - Print all even numbers using stream().filter().
+  - Print the count of odd numbers using count().
+- Given a list of strings, print all strings that start with "A" using a Predicate<String>.
+- Use Consumer<String> to print each element of a list.
+- Use Function<String, Integer> to find the length of each word in a list and collect them into a new list.
+- Write a program that uses Supplier<Double> to generate random numbers.
+
+### 🔹 Medium Level (Transformations & Collections)
+
+- Given a list of integers, square each number and remove duplicates. Collect the result into a Set.
+- Find the maximum and minimum number in a list using stream().max() and stream().min().
+- Given a list of names, sort them in:
+  - Natural order.
+  - Reverse order using Comparator and method references.
+  - Use Optional to safely get the length of a string (handle null input).
+- Convert a Map<String, Integer> (studentName → marks) to a list of student names who scored above 80.
+
+### 🔹 Hard Level (Real-World Use Cases)
+
+- Given a list of employees (id, name, department, salary):
+  - Group employees by department.
+  - Find the highest-paid employee in each department.
+  - Calculate the average salary of all employees.
+- Find the first non-repeated character in a string using Streams.
+- Flatten a list of lists of integers into a single list using flatMap().
+- Use partitioningBy() to divide a list of numbers into even and odd.
+- Given a list of words, find the frequency of each word using Collectors.groupingBy().
+
+### 🔹 Interview Ready (Challenging & Practical)
+
+- Write a program to detect duplicates in a list using Streams.
+- From a list of transactions (id, amount, type), find:
+  - The highest transaction amount per type.
+  - The total transaction amount grouped by type.
+- Implement a caching system using Supplier and Map where the supplier generates values if not present.
+- Find the longest string in a list without using loops.
+- Given a list of employees:
+  - Get the second-highest salary using Streams.
+  - Get a comma-separated string of all employee names sorted alphabetically.
+--- 
