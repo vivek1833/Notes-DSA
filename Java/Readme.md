@@ -409,6 +409,13 @@ java.lang.Throwable
 
 ---
 
+## 49. Component vs Configuration
+- `@Component` and `@Configuration` are both Spring-managed beans, but they serve slightly different purposes.
+- `@Component` is a generic stereotype for any Spring bean. The container manages its lifecycle, and by default it’s a singleton.
+- `@Configuration` is a specialized type of @Component used to declare @Bean methods. Spring creates a CGLIB proxy of the configuration class to ensure that @Bean methods return singleton instances even if they’re called internally within the class.
+- So the key difference is: `@Configuration` enables proxying of internal method calls, guaranteeing singleton consistency for beans defined inside it, whereas @Component does not.
+- A good rule of thumb: use `@Configuration` for bean factory classes and @Component for regular service or repository beans.
+
 # ✅ Java Interview Questions – Level 2
 
 ## 1. Contract between `hashCode()` and `equals()`

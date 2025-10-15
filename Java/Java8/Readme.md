@@ -10,10 +10,10 @@ This repository contains examples to learn **Java 8 Streams API** and related fu
 - **Lambda Expressions**: `x -> x * 2`
 - **Method References**: `String::toUpperCase`
 - **Streams API**:
-  - Stream creation
-  - Intermediate operations
-  - Terminal operations
-  - Parallel streams
+    - Stream creation
+    - Intermediate operations
+    - Terminal operations
+    - Parallel streams
 
 ---
 
@@ -22,7 +22,7 @@ This repository contains examples to learn **Java 8 Streams API** and related fu
 Java 8 introduced commonly used functional interfaces in `java.util.function`.
 
 | Interface         | Method              | Example               | Use Case         | Definition                                   |
-| ----------------- | ------------------- | --------------------- | ---------------- | -------------------------------------------- |
+|-------------------|---------------------|-----------------------|------------------|----------------------------------------------|
 | **Predicate<T>**  | `boolean test(T t)` | `x -> x > 10`         | Filtering        | Boolean-returning function with one argument |
 | **Function<T,R>** | `R apply(T t)`      | `x -> x * x`          | Mapping          | Value-returning function with one argument   |
 | **Consumer<T>**   | `void accept(T t)`  | `System.out::println` | Processing       | Void-returning function with one argument    |
@@ -98,28 +98,36 @@ Operations that **consume a stream** and produce a result.
 
 ```java
 Predicate<Integer> isEven = x -> x % 2 == 0;
-System.out.println(isEven.test(4)); // true
+System.out.
+
+println(isEven.test(4)); // true
 ```
 
 ### Function
 
 ```java
 Function<String, Integer> length = String::length;
-System.out.println(length.apply("Hello")); // 5
+System.out.
+
+println(length.apply("Hello")); // 5
 ```
 
 ### Consumer
 
 ```java
 Consumer<String> printer = System.out::println;
-printer.accept("Hello Consumer");
+printer.
+
+accept("Hello Consumer");
 ```
 
 ### Supplier
 
 ```java
 Supplier<Double> randomSupplier = Math::random;
-System.out.println(randomSupplier.get());
+System.out.
+
+println(randomSupplier.get());
 ```
 
 ---
@@ -145,8 +153,8 @@ System.out.println(randomSupplier.get());
 ### 🔹 Easy Level (Basics & Syntax)
 
 - Write a program to create a list of integers and:
-  - Print all even numbers using stream().filter().
-  - Print the count of odd numbers using count().
+    - Print all even numbers using stream().filter().
+    - Print the count of odd numbers using count().
 - Given a list of strings, print all strings that start with "A" using a Predicate<String>.
 - Use Consumer<String> to print each element of a list.
 - Use Function<String, Integer> to find the length of each word in a list and collect them into a new list.
@@ -157,17 +165,17 @@ System.out.println(randomSupplier.get());
 - Given a list of integers, square each number and remove duplicates. Collect the result into a Set.
 - Find the maximum and minimum number in a list using stream().max() and stream().min().
 - Given a list of names, sort them in:
-  - Natural order.
-  - Reverse order using Comparator and method references.
-  - Use Optional to safely get the length of a string (handle null input).
+      - Natural order.
+    - Reverse order using Comparator and method references.
+    - Use Optional to safely get the length of a string (handle null input).
 - Convert a Map<String, Integer> (studentName → marks) to a list of student names who scored above 80.
 
 ### 🔹 Hard Level (Real-World Use Cases)
 
 - Given a list of employees (id, name, department, salary):
-  - Group employees by department.
-  - Find the highest-paid employee in each department.
-  - Calculate the average salary of all employees.
+    - Group employees by department.
+    - Find the highest-paid employee in each department.
+    - Calculate the average salary of all employees.
 - Find the first non-repeated character in a string using Streams.
 - Flatten a list of lists of integers into a single list using flatMap().
 - Use partitioningBy() to divide a list of numbers into even and odd.
@@ -177,11 +185,12 @@ System.out.println(randomSupplier.get());
 
 - Write a program to detect duplicates in a list using Streams.
 - From a list of transactions (id, amount, type), find:
-  - The highest transaction amount per type.
-  - The total transaction amount grouped by type.
+    - The highest transaction amount per type.
+    - The total transaction amount grouped by type.
 - Implement a caching system using Supplier and Map where the supplier generates values if not present.
 - Find the longest string in a list without using loops.
 - Given a list of employees:
-  - Get the second-highest salary using Streams.
-  - Get a comma-separated string of all employee names sorted alphabetically.
+    - Get the second-highest salary using Streams.
+    - Get a comma-separated string of all employee names sorted alphabetically.
+
 --- 

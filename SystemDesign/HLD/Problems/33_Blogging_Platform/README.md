@@ -9,7 +9,6 @@ Design a scalable blogging platform (like Medium, WordPress.com) that allows use
 - Follow authors and receive personalized feeds
 - Tag, categorize, and search content
 - Support drafts, scheduled publishing, and version history
-- Moderate content and manage user roles
 - Ensure high availability, scalability, and security
 
 ## 🎯 Functional Requirements
@@ -21,8 +20,7 @@ Design a scalable blogging platform (like Medium, WordPress.com) that allows use
 3. **Feed Generation**: Personalized feed, trending, tags, categories
 4. **Commenting & Reactions**: Comment, like, share, report
 5. **Search & Discovery**: Full-text search, tags, categories, recommendations
-6. **Moderation**: Content moderation, reporting, admin tools
-7. **Notifications**: Real-time and batch notifications
+6. **Notifications**: Real-time and batch notifications
 
 ### Non-Functional Requirements
 
@@ -36,38 +34,7 @@ Design a scalable blogging platform (like Medium, WordPress.com) that allows use
 
 ### High-Level Architecture
 
-```
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│ Web Client   │   │ Mobile Client│   │ API Client   │
-└──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-       │                  │                  │
-       └────────────┬─────┴─────┬────────────┘
-                    │           │
-           ┌────────▼───────────▼───────────┐
-           │         API Gateway            │
-           └────────┬───────────┬───────────┘
-                    │           │
-      ┌─────────────▼───┐   ┌───▼────────────┐
-      │  Auth Service   │   │  User Service  │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Article Service │   │ Feed Service   │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Comment Service │   │ Search Service │
-      └────────┬────────┘   └────┬───────────┘
-               │                 │
-      ┌────────▼────────┐   ┌────▼───────────┐
-      │ Moderation Svc  │   │ Notification   │
-      └────────┬────────┘   │   Service      │
-               │            └────┬───────────┘
-           ┌───▼─────────────────▼───┐
-           │   Storage Layer (DB,    │
-           │   S3, Redis, CDN)       │
-           └─────────────────────────┘
-```
+![Architecture](architecture.excalidraw.svg)
 
 ### Core Components
 
@@ -220,121 +187,6 @@ Design a scalable blogging platform (like Medium, WordPress.com) that allows use
 - CDN for global delivery
 - Shard DBs by user/article
 
-## 🧪 Testing Strategy
-
-### Unit Testing
-
-- Article CRUD, comment logic
-- Feed generation
-- Permission checks
-
-### Integration Testing
-
-- End-to-end publishing to feed
-- Commenting, moderation flows
-- Search and notification flows
-
-### Load Testing
-
-- Simulate high publishing/view traffic
-- Feed/search latency under heavy load
-- CDN and storage stress tests
-
-### Security Testing
-
-- Auth bypass attempts
-- Media URL access control
-- Spam/abuse detection
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP (2-3 months)
-
-- User registration, authentication, profile
-- Article publishing, editing, drafts
-- Basic feed, comments, likes
-- Search, tags, categories
-
-### Phase 2: Enhanced Features (3-4 months)
-
-- Scheduling, version history
-- Advanced feed (personalized, trending)
-- Moderation, reporting
-- Notifications, analytics
-
-### Phase 3: Advanced Features (2-3 months)
-
-- Editor roles, collaborative editing
-- API for third-party integrations
-- Mobile/web apps
-- Advanced analytics, reporting
-
-### Phase 4: Enterprise Features (2-3 months)
-
-- Enterprise SSO, audit logs
-- Compliance, GDPR
-- Custom domains, branding
-- Global CDN optimization
-
-## 🛠️ Technology Stack
-
-### Backend
-
-- **Language**: Go, Java, or Node.js
-- **Framework**: Spring Boot, Express.js, Gin
-- **Storage**: AWS S3, GCS, Azure Blob
-- **Metadata DB**: Cassandra, DynamoDB, MongoDB
-- **Search**: Elasticsearch
-- **Cache**: Redis
-- **Queue**: Kafka, RabbitMQ
-
-### Frontend
-
-- **Web**: React, Angular, Vue.js
-- **Mobile**: React Native, Flutter, native
-
-### Infrastructure
-
-- **Cloud**: AWS, GCP, Azure
-- **Load Balancer**: AWS ALB, Nginx
-- **CDN**: CloudFront, Cloud CDN
-- **Monitoring**: Prometheus, Grafana
-- **Logging**: ELK Stack
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-
-- **Feed Latency**: Time to load feed
-- **Article Publish Latency**: Time to publish article
-- **Engagement**: Likes, comments, shares per article
-- **Storage Utilization**: Per user, per region
-- **Error Rates**: Failed publishes, feed errors
-
-### Alerting
-
-- High error rates
-- Feed or publish latency spikes
-- Storage/CDN capacity thresholds
-- Security/abuse incidents
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-
-- Regular metadata DB backups
-- Cross-region replication for storage
-- Automated restore procedures
-
-### Failover Strategy
-
-- Multi-region deployment
-- Automatic failover for storage and DB
-- Graceful degradation for non-critical features
-- Data consistency checks after failover
-
----
-
 ## 📚 Additional Resources
 
 - [Medium Engineering Blog](https://medium.engineering/)
@@ -344,5 +196,3 @@ Design a scalable blogging platform (like Medium, WordPress.com) that allows use
 - [CDN for Media Delivery](https://aws.amazon.com/cloudfront/)
 
 ---
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.

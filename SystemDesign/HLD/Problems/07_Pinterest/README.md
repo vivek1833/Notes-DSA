@@ -1,22 +1,13 @@
 # Design Pinterest – Image Discovery Platform
 
-## 📋 Problem Statement
+## Core Features
 
-Design a image-based content discovery with pinning and boards that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
-
-## 🎯 Functional Requirements
-
-### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+### 🎯 Functional Requirements
+- Upload & Pin images (with metadata)
+- Search & Discovery (text + visual / semantic)
+- Boards & Collections (organize pins)
+- Social features (follow, feed, likes, comments)
+- Recommendations & Personalization (home feed, related pins)
 
 ### Non-Functional Requirements
 - **Availability**: [Requirement]
@@ -29,9 +20,7 @@ Design a image-based content discovery with pinning and boards that can handle:
 
 ### High-Level Architecture
 
-```
-[Insert architecture diagram here]
-```
+![Pinterest Architecture](architecture.excalidraw.svg)
 
 ### Core Components
 

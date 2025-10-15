@@ -4,18 +4,19 @@
 
 Design a text storage with public/private links and expiration that can handle:
 
-## 🎯 Functional Requirements
+## 🎯 Core
 
-### Core Features
 1. **Create a Paste**: Create a new paste with text content and an optional expiration time.
 2. **Retrieve a Paste**: Retrieve the content of a specific paste by its unique URL.
+
+### Functional Requirements
 
 - Create a Paste with custom expiration time
 - Generate unique URL for each paste
 - Retrieve paste by unique URL
 
 ### Non-Functional Requirements
-- Availability >> Consistency for creating/retrieving paste.
+- Availability >> Consistency for retrieving paste.
 - Consistency >> Availability for creating URL.
 - Latencty (< 100ms)
 - Rate Limiting
