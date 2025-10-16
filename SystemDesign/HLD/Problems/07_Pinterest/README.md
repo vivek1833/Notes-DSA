@@ -10,11 +10,9 @@
 - Recommendations & Personalization (home feed, related pins)
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+- **Availability**: 99.99%
+- **Scalability**: Daily 10M+ pins, 100M+ users (Read:Write = 10:1)
+- **Consistency**: Eventual for uploads, strong for social features
 
 ## 🏗️ System Architecture
 
@@ -24,185 +22,95 @@
 
 ### Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 1. **Pin Service**
+- Manages creation and storage of pins and boards (metadata + S3 URLs).
+- Triggers asynchronous ML inference jobs after successful upload (via Kafka).
+- Updates Cassandra (Pin metadata) and publishes CDC events for ElasticSearch indexing.
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 2. **Machine Learning Service**
+- Consumes messages (pin-created events) from Kafka and fetches image from S3.
+- Runs image classification model (CNN/CLIP) to extract tags or embeddings.
+- Updates tags in Cassandra and sends new tag data to Elasticsearch for search indexing.
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 3. **Social Service**
+- Manages user relationships — follows, likes, comments.
+- Stores relational data in SQL (e.g., PostgreSQL) for consistency and easy joins.
+- Publishes activity events (like/follow/comment) to Kafka for feed generation.
+
+#### 3. **Feed Service**
+- Subscribes to Kafka topics (pin_created, like_event, follow_event) to build user feeds.
+- Uses a hybrid approach:
+  - Fan-out on write for popular users.
+  - Fan-out on read for normal users.
+- Stores computed feeds in Redis (sorted by timestamp for fast retrieval).
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
+### Pin Schema
 ```javascript
 {
-  _id: ObjectId,
-  // Add fields here
+  pin_id: UUID,
+  user_id: UUID,
+  board_id: UUID,
+  s3_url: "https://s3.amazonaws.com/pins/123.jpg",
+  tags: ["rose", "flower", "nature"],
+  created_at: timestamp,
+  updated_at: timestamp
 }
 ```
 
-### [Entity 2] Schema
+### Board Schema
 ```javascript
 {
-  _id: ObjectId,
-  // Add fields here
+  board_id: UUID,
+  user_id: UUID,
+  title: "My Garden Collection",
+  description: "All beautiful flowers I found",
+  pin_ids: [UUID],
+  created_at: timestamp
 }
 ```
 
-## 🔧 Key Implementation Details
+### Social Schema
+```sql
+TABLE follows (
+  follower_id UUID,
+  followee_id UUID,
+  created_at TIMESTAMP
+);
 
-### [Implementation Detail 1]
-```javascript
-// Add implementation code here
-```
+TABLE likes (
+  user_id UUID,
+  pin_id UUID,
+  created_at TIMESTAMP
+);
 
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
+TABLE comments (
+  comment_id UUID PRIMARY KEY,
+  user_id UUID,
+  pin_id UUID,
+  text TEXT,
+  created_at TIMESTAMP
+);
 ```
 
 ## 🚀 Scalability Considerations
 
 ### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
+- Deploy all stateless services (gateway, pinService, ML inference, search, feed) behind load balancers.
+- Scale Cassandra horizontally by adding nodes to increase partition capacity.
+- ElasticSearch clusters scaled by adding shards and replica nodes.
+- Kafka partitioning used for throughput and ordered processing.
 
 ### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
+- Redis Feed Cache: Store user timelines with TTL (e.g., 24h).
+- CDN Edge Caching: Serve images from edge nodes globally to reduce latency.
+- Search Query Cache: Cache popular tag searches in Redis to reduce ES load.
 
 ### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
-
-## 🔒 Security Considerations
-
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
-
-## 📊 Performance Optimization
-
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
-
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
-
-## 🧪 Testing Strategy
-
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
-
-### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
+- Cassandra: Data modeled around access patterns (user_id, board_id → list of pins).
+- SQL: Indexed foreign keys (pin_id, user_id) for fast joins on likes/follows.
+- ElasticSearch: Indexed by tags, title, and optionally vector for visual search.
+- CDC Pipeline (Debezium): Cassandra → Kafka → Indexer → ElasticSearch for near-real-time sync.
 
 ---
-
-## 📚 Additional Resources
-
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
-
----
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
