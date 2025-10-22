@@ -2,218 +2,169 @@
 
 ## 📋 Problem Statement
 
-Design a scheduling meetings with availability tracking that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
+Design a scheduling system that allows users to manage their availability, schedule meetings, send notifications, and integrate with other calendars. The system should support high concurrency, real-time updates, and scalable event storage.
 
-## 🎯 Functional Requirements
+## Core Features
 
-### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+### 🎯 Functional Requirements
 
-### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+1. **User Management**: Users can create accounts, login/logout, and manage profiles.
+2. **Availability Management**: Users can see available time slots for meetings. Supports recurring availability rules.
+3. **Meeting Scheduling**: Users and external participants can book meetings based on availability. Prevent double-booking by checking overlapping events.
+4. **Calendar Integration & Sync**: Integrate with Google Calendar, Outlook, iCal, etc.
+5. **Notifications & Reminders**: Send email, push, or SMS reminders before meetings. Allow customizable reminder timings (e.g., 10 min, 1 hour).
+
+### 🎯 Non-Functional Requirements
+
+- **Consistency**: Strong consistency for scheduling, eventual for notifications
+- **Scalability**: Handle large volumes of events and users (10M users, 1M events per day)
+- **Availability**: 99.99% uptime
+- **QPS**: 5000 QPS for scheduling, 1000 QPS for notifications
+
+## 🧾 APIs (example)
+
+- `POST /users` — create user
+- `GET /user/{id}/availability?start=&end=` — check availability (backend usage)
+- `POST /events` — create event (body: participants, start, end, recurrenceRule, idempotencyKey)
+- `PUT /events/{id}` — update event
+- `DELETE /events/{id}` — cancel event
+- `POST /webhook/google` — endpoint for Google push notifications (SyncService)
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
-```
-[Insert architecture diagram here]
-```
+![Calendly Architecture ](calendly.excalidraw.svg)
 
 ### Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 1. **User Service**
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+- Manage user accounts, email, timezone, connected calendar metadata
+- Strong-consistency store (Postgres) for identity and critical metadata
+- Provide endpoints for user profile & linked-calendars info
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 2. **Event Service**
+
+- Persist event metadata, recurrence rules, attendees in Cassandra
+- Ensure correctness when booking (check availability, use idempotency key)
+- Write events atomically then emit event to Kafka (outbox / saga-like pattern)
+- Provide APIs for create/update/cancel events
+
+#### 3. **Scheduler Service**
+
+- Calculate next occurrence for recurring events
+- Query Cassandra for events due in the near window (e.g., next 5 minutes)
+- Produce reminder messages to Kafka notification topic
+- Maintain progress checkpointing to resume after restarts
+
+#### 4. **Notification Service**
+
+- Consume notification topic and send via Email/SMS/Push
+- Support webhook-based delivery (for external endpoints)
+- Retry with exponential backoff and push failures to Kafka DLQ
+- Ensure idempotent delivery via idempotency keys
+
+#### 6. **Webhook / Sync Service**
+
+- Receive external calendar webhooks (Google/Outlook)
+- Normalize and apply changes to EventService (with mapping table)
+- Emit outgoing webhooks when local events change
+- Maintain webhook session & verification (retries, backoff, auth)
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
 ```javascript
-{
-  _id: ObjectId,
-  // Add fields here
+users (
+  id UUID PRIMARY KEY,
+  email VARCHAR UNIQUE,
+  name VARCHAR,
+  timezone VARCHAR,
+  events JSONB,
+  connected_calendars JSONB, e.g. [{provider:"google", _id:"..."}]
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+events (
+  {
+  id: UUID,
+  organizerId: UUID,
+  participantIds: [UUID],
+  // timestamp for an instance
+  startTime: ISODate,
+  endTime: ISODate,
+  isRecurring: boolean,
+  // store RRULE or similar
+  recurrenceRule: "RRULE:FREQ=MONTHLY;BYMONTHDAY=1",
+  // optional helper field
+  nextOccurrence: ISODate,
+  metadata: {
+    title: "Team Sync",
+    location: "Zoom",
+    description: "Monthly sync"
+  },
+  // for synced external events
+  externalMappings: {
+    google: "googleEventId123",
+    outlook: "outlookId456"
+  }
 }
+)
+
+notification (
+    {
+    "notificationId": "uuid",
+    "eventId": "uuid",
+    "userId": "uuid",
+    "deliverAt": "2025-10-20T12:00:00Z",
+    "channel": "email|sms|push|webhook",
+    "payload": { /* channel payload */ },
+    "idempotencyKey": "eventId:reminderType"
+  }
+)
 ```
 
-### [Entity 2] Schema
-```javascript
-{
-  _id: ObjectId,
-  // Add fields here
-}
-```
+## 🔁 Key Flows
 
-## 🔧 Key Implementation Details
+### Booking an Event (create)
 
-### [Implementation Detail 1]
-```javascript
-// Add implementation code here
-```
+- Client calls `POST /events` to EventService with idempotency key.
+- EventService:
+  - Checks availability (`Availability API`) by querying events overlap in Cassandra (and cached Redis).
+  - Persists event record in Cassandra.
+  - Writes an outbox record / publishes `event.created` to Kafka (ensure atomic visibility or use CDC/outbox pattern).
+- Scheduler/Notification consumes event.created → schedules reminders.
 
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
-```
+### Recurring Event Handling
 
-## 🚀 Scalability Considerations
+- Store recurrenceRule (RRULE). Do not materialize all future occurrences.
+- Scheduler computes next occurrence, enqueues a reminder message for that time.
+- After firing, it computes and enqueues the next one.
 
-### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
+### Notifications
 
-### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
+- Scheduler publishes to Kafka notification topic with `deliverAt`.
+- Notification workers consume and deliver.
+- On failure, worker retries; after max attempts, push to DLQ topic for manual processing.
 
-### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
+### Webhook Sync
 
-## 🔒 Security Considerations
-
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
+- WebhookService listens to external calendar webhooks and maps events.
+- On local changes: WebhookService sends outgoing webhooks to configured external targets.
+- Use externalMappings to avoid duplicate creation.
 
 ## 📊 Performance Optimization
 
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Key Considerations
 
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
-
-## 🧪 Testing Strategy
-
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
-
-### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
+- For conflict-sensitive operations (booking), consider a short-lived locking mechanism or a strongly-consistent coordination (Postgres row lock or a coordinator service).
+- For notification delivery, use Kafka's built-in message deduplication and idempotency features.
 
 ---
 
 ## 📚 Additional Resources
 
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
+- [System Design School](https://systemdesignschool.io/problems/google-calendar/solution)
 
 ---
-
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
