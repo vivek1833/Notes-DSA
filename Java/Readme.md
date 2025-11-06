@@ -410,11 +410,50 @@ java.lang.Throwable
 ---
 
 ## 49. Component vs Configuration
+
 - `@Component` and `@Configuration` are both Spring-managed beans, but they serve slightly different purposes.
 - `@Component` is a generic stereotype for any Spring bean. The container manages its lifecycle, and by default it’s a singleton.
 - `@Configuration` is a specialized type of @Component used to declare @Bean methods. Spring creates a CGLIB proxy of the configuration class to ensure that @Bean methods return singleton instances even if they’re called internally within the class.
 - So the key difference is: `@Configuration` enables proxying of internal method calls, guaranteeing singleton consistency for beans defined inside it, whereas @Component does not.
 - A good rule of thumb: use `@Configuration` for bean factory classes and @Component for regular service or repository beans.
+
+---
+
+## 50. Overriding: Method Call in Constructor with static
+
+```java
+class A {
+    A() { show(); }
+
+    static void show() { System.out.println("A show"); }
+}
+
+class B extends A {
+    static int x = 10;
+
+    static void show() { System.out.println("B show: " + x);}
+}
+
+public class Test {
+    public static void main(String[] args) {
+        new B().show();
+        // A Show B Show 10
+    }
+}
+```
+
+- `A` constructor is called. `A.show()` is called, since it is static it is called from `A`, hence `A Show`. If it was not static, `B.show()` would have been called.
+- `B.show()` is called. `B.show()` is called from `B` because it is static, hence `B Show 10`.
+
+--- 
+
+### 51. The rule of `super()` and `this()`
+
+- If a constructor starts with `super(...):` It calls the corresponding superclass constructor.
+
+- If a constructor starts with `this(...):` It calls another constructor within the same class. The compiler inserts the implicit super() into the final constructor in the chain.f
+
+- If a constructor starts with neither: The compiler inserts the implicit super().
 
 # ✅ Java Interview Questions – Level 2
 
@@ -1164,6 +1203,68 @@ Service service;
 
 - `get()`: Returns entity or null if not found.
 - `load()`: Returns proxy; throws exception if entity not found.
+
+---
+
+## 53. Static vs non-static method overriding
+
+```java
+class A {
+    void getMsg() { sout("A Called"); }
+}
+
+class B extends A {
+    static void getMsg() { sout("B Called"); }
+}
+
+class Solution {
+    main() {
+        A a = new B();
+        a.getMsg();     // A Called
+    }
+}
+```
+
+- This scenario is a classic example of Method Hiding, not Method Overriding, because the getMsg() method in class B is declared static.
+
+1. The Conflict: Instance vs. Static
+
+   - Class A: void getMsg() is an instance method (non-static).
+   - Class B: static void getMsg() is a static method (class method).
+
+2. How the JVM Resolves the Call
+
+- The key rule for method resolution in Java is:
+  - Instance Methods (Overriding): The method to call is determined by the object type at runtime (Polymorphism).
+  - Static Methods (Hiding): The method to call is determined by the reference type at compile time (Static Binding).
+
+## 54. Overrding Output
+
+```java
+class A {
+    void getMsg() { System.out.println("A Called"); }
+
+    void getVal() { System.out.println("A Value"); }
+}
+
+class B extends A {
+    @Override
+    void getMsg() { System.out.println("B Called"); }
+
+    void getNode() { System.out.println("B Node"); }
+}
+
+class Main {
+    public static void main(String[] args) {
+        A a = new B();
+        a.getVal();     // A Value
+        a.getMsg();     // B Called
+        a.getNode();    // Error
+    }
+}
+```
+
+- Keep same visibility or increase it, but never reduce it. Order is (public > protected > default > private).
 
 # ✅ Java Interview Questions – Level 3
 

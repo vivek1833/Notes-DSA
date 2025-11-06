@@ -58,6 +58,9 @@ class Counter {
 
 public class ThreadImpl {
     public static void main(String[] args) {
+
+        // When Thread is extended we can directly call start method
+        // But when Runnable is implemented we need to create a Thread and call start method
         Counter counter = new Counter();
         MyThread t2 = new MyThread("Thread2", counter);
         MyThread t1 = new MyThread("Thread1", counter);
