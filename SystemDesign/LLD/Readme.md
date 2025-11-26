@@ -4,7 +4,7 @@
 
 ### 1. S — Single Responsibility Principle (SRP)
 
-*A class should have only one reason to change.*
+_A class should have only one reason to change._
 
 📌 **Key Idea** One class = one responsibility.
 
@@ -33,7 +33,7 @@ class ReportPrinter {
 
 ### 2. O — Open/Closed Principle (OCP)
 
-*Software entities should be open for extension, but closed for modification.*
+_Software entities should be open for extension, but closed for modification._
 
 📌 **Key Idea** Add new behavior without modifying old code.
 
@@ -76,7 +76,7 @@ class AreaCalculator {
 
 ### 3. L — Liskov Substitution Principle (LSP)
 
-*Subtypes must be substitutable for their base types.*
+_Subtypes must be substitutable for their base types._
 
 📌 **Key Idea** Subclass objects should not break expectations.
 
@@ -98,7 +98,8 @@ class Sparrow extends Bird { } // OK
 class Ostrich extends Bird {
   @Override
   void fly() {
-    throw new UnsupportedOperationException(); // breaks LSP
+    // breaks LSP
+    throw new UnsupportedOperationException();
   }
 }
 ```
@@ -106,19 +107,13 @@ class Ostrich extends Bird {
 ```java
 // FIX
 interface Bird { }
-```
 
-```java
 interface FlyingBird extends Bird {
   void fly();
 }
-```
 
-```java
 class Ostrich implements Bird { }
-```
 
-```java
 class Sparrow implements FlyingBird {
   public void fly() {
     System.out.println("Flying");
@@ -128,7 +123,7 @@ class Sparrow implements FlyingBird {
 
 ### 4. I — Interface Segregation Principle (ISP)
 
-*Clients should not be forced to implement interfaces they do not use.*
+_Clients should not be forced to implement interfaces they do not use._
 
 �� **Key Idea** Favor small, specific interfaces.
 
@@ -166,7 +161,7 @@ class SimplePrinter implements Printer {
 
 ### 5. D — Dependency Inversion Principle (DIP)
 
-*Depend on abstractions, not concrete classes.*
+_Depend on abstractions, not concrete classes._
 
 📌 **Key Idea** High-level modules shouldn’t depend on low-level modules
 directly.
@@ -189,7 +184,7 @@ class Switch {
   Switch(Switchable d) {
     this.device = d;
   }
-  
+
   void operate() {
 	  device.turnOn();
 	}
@@ -202,47 +197,17 @@ Switch s = new Switch(new LightBulb());
 s.operate(); // Output: Light turned on!
 ```
 
-### 🧾 Final Summary Table (Notion-Ready)
+### 🧾 Final Summary
 
-```
-Principle Definition Goal Key Fix
-```
+| Principle | Definition                                  | Goal                       | Key Fix                        |
+| --------- | ------------------------------------------- | -------------------------- | ------------------------------ |
+| SRP       | A class should have one reason to change    | Separation of concerns     | Split class responsibilities   |
+| OCP       | Open for extension, closed for modification | Flexible & extensible code | Use interfaces/inheritance     |
+| LSP       | Subtypes must be replaceable for base types | Reliable polymorphism      | Use correct inheritance rules  |
+| ISP       | No client should depend on unused methods   | Cleaner, focused contracts | Split large interfaces         |
+| DIP       | Depend on abstractions, not concretions     | Loose coupling             | Use interfaces + DI containers |
 
-```
-SRP One reason to change Separation of concerns Split class bresponsibilityy
-```
-
-```
-OCP
-Open for extension,
-closed for modification
-```
-
-```
-Flexible &
-extensible code
-```
-
-```
-Use
-inheritance/interfaces
-```
-
-```
-LSP Subclass cparent an replace Reliablepolymorphism Use corinheritancerect
-```
-
-```
-ISP
-No unnecessary
-methods in interfaces Cleaner contracts Split fat interfaces
-```
-
-```
-DIP Depend onabstractions Loose coupling Use interfaces & DI
-```
-
-## 🔥 CREATIONAL DESIGN PATTERNS —
+## 🔥 CREATIONAL DESIGN PATTERNS
 
 ## Detailed & Simple
 
@@ -252,49 +217,49 @@ DIP Depend onabstractions Loose coupling Use interfaces & DI
 
 ### 🎯 Real-Life Analogy:
 
-You have **one electricity board** in a city.
-
-No matter how many people call, they all get the **same single instance**.
+You have **one electricity board** in a city. No matter how many people call, they all get the **same single instance**.
 
 ### 👨‍💻 Code Example (Java):
 
 ```java
-class DBConnection {
-	private static DBConnection instance;
-	private DBConnection() {} // nobody can create it from outside
-	public static DBConnection getInstance() {
-		if (instance == null) instance = new DBConnection();
-		return instance;
-	}
+class Logger {
+  private static Logger logger;
+
+  public static Logger getInstance() {
+    if (logger == null) {
+      synchronized (Logger.class) {
+        if (logger == null) {
+          logger = new Logger();
+        }
+      }
+    }
+    return logger;
+  }
 }
+
+public class Main {
+  public static void main(String[] args) {
+    Logger logger1 = Logger.getInstance();
+    Logger logger2 = Logger.getInstance();
+
+    System.out.println(logger1 == logger2);
+    // Output: true
+  }
+}
+
 ```
 
-Now wherever you need DB access:
-
-```java
-DBConnection db1 = DBConnection.getInstance();
-DBConnection db2 = DBConnection.getInstance();
-```
-
-✅ db1 and db2 are **same object**
-
-✅ Saves memory, avoids bugs
-
-✅ Used in: Logger, Config, DB, etc.
+- Both are same objects
+- Saves memory, avoids bugs
+- Used in: Logger, Config, DB, etc.
 
 ### ✅ 2. Factory Method Pattern
 
-### You donʼt create objects directly, you ask a factory to do it
-
-### for you.
+### You donʼt create objects directly, you ask a factory to do it for you.
 
 ### 🎯 Real-Life Analogy:
 
-You go to a chai shop and say: “Bhai ek chai do.ˮ
-
-You donʼt care **how** he makes it.
-
-He might give:
+You go to a chai shop and say: “Bhai ek chai do.ˮ You donʼt care **how** he makes it. He might give:
 
 ```
 Masala chai
@@ -325,23 +290,15 @@ class SMSNotification implements Notification {
 
 class NotificationFactory {
   public static Notification create(String type) {
-    if (type.equals("email")) return new EmailNotification();
-    else if (type.equals("sms")) return new SMSNotification();
+    if (type.equals("EMAIL")) return new EmailNotification();
+    else if (type.equals("SMS")) return new SMSNotification();
     return null;
   }
 }
 ```
 
-Usage:
-
-```java
-Notification n = NotificationFactory.create("sms");
-n.notifyUser(); // prints SMS sent
-```
-
-✅ You donʼt care how object is created
-
-✅ Good when many subtypes Email, SMS, Push…)
+- You donʼt care how object is created
+- Good when many subtypes Email, SMS, Push...
 
 ### ✅ 3. Abstract Factory Pattern
 
@@ -414,9 +371,8 @@ Button b = factory.createButton();
 b.paint(); // Windows Button
 ```
 
-✅ Clean family-based object creation
-
-✅ Used in UI kits, themes, skins, OS-specific systems
+- Clean family-based object creation
+- Used in UI kits, themes, skins, OS-specific systems
 
 ### ✅ 4. Builder Pattern
 
@@ -438,47 +394,53 @@ Finally, the sandwich is ready.
 ### 👨‍💻 Code:
 
 ```java
-class Pizza {
-  String dough, cheese, toppings;
+class User {
+  String name, email, pass, place;
 
-  static class Builder {
-    String dough, cheese, toppings;
-    Builder setDough(String d) {
-      dough = d;
+  public User(Builder builder) {
+    this.name = builder.name;
+    this.email = builder.email;
+    this.pass = builder.pass;
+    this.place = builder.place;
+  }
+
+  public static class Builder {
+    private final String email, pass;
+    private String name, place;
+
+    public Builder(String email, String pass) {
+      this.email = email;
+      this.pass = pass;
+    }
+
+    public Builder name(String name) {
+      this.name = name;
       return this;
     }
-    Builder setCheese(String c) {
-      cheese = c;
+
+    public Builder place(String place) {
+      this.place = place;
       return this;
     }
-    Builder setToppings(String t) {
-      toppings = t;
-      return this;
+
+    public Builder build() {
+      return new User(this);
     }
-    Pizza build() {
-      Pizza p = new Pizza();
-      p.dough = dough;
-      p.cheese = cheese;
-      p.toppings = toppings;
-      return p;
-    }
+  }
+}
+
+public class Main {
+  public static void main(String[] args) {
+    User user = User.Builder("john@test.com", "1234")
+      .name("John")
+      .place("New York")
+      .build();
   }
 }
 ```
 
-Usage:
-
-```java
-Pizza p = new Pizza.Builder()
-.setDough("thin")
-.setCheese("mozzarella")
-.setToppings("olives")
-.build();
-```
-
-✅ Better than constructor with 5 params
-
-✅ Cleaner to read and flexible
+- Better than constructor with 5 params
+- Cleaner to read and flexible
 
 ### ✅ 5. Prototype Pattern
 
@@ -486,51 +448,41 @@ Pizza p = new Pizza.Builder()
 
 ### 🎯 Real-Life Analogy:
 
-You fill one form 📝 and take 10 Xerox copies.
-
-All are same base, but editable.
+You fill one form and take 10 Xerox copies. All are same base, but editable.
 
 ### 👨‍💻 Code:
 
 ```java
-class Document implements Cloneable {
-  String content;
-  public Document clone() throws CloneNotSupportedException {
-    return (Document) super.clone();
+class Mirror implement Clonable {
+  private String glass, height, weight;
+
+  public Mirror clone() throws CloneNotSupportedException {
+    return (Mirror) super.clone();
+  }
+}
+
+public class Main {
+  public static void main(String[] args) throws CloneNotSupportedException {
+    Mirror m1 = new Mirror();
+    Mirror m2 = m1.clone();
   }
 }
 ```
 
-Usage:
-
-```java
-Document d1 = new Document();
-d1.content = "Agreement";
-```
-
-```java
-Document d2 = d1.clone();
-d2.content = "Modified Agreement";
-```
-
-✅ Saves time
-
-✅ Good for templates, objects with heavy setup
+- Saves time
+- Good for templates, objects with heavy setup
 
 ### ✅ FINAL SUMMARY
 
-```
-Pattern When to Use Analogy
-Singleton Only one object Only one prime minister
-Factory Choose object by type Tea shop gives chai based on request
-Abstract Factory Group of related objects Victorian vs Modern furniture set
-Builder Step-by-step big object Subway sandwich
-Prototype Clone object Xerox of a filled form
-```
+| Pattern          | When to Use                                 | Analogy                                     |
+| ---------------- | ------------------------------------------- | ------------------------------------------- |
+| Singleton        | Only one instance should exist              | One prime minister of a country             |
+| Factory          | Create object based on input/type           | Tea shop preparing chai based on your order |
+| Abstract Factory | Create families of related objects together | Victorian vs. Modern full furniture set     |
+| Builder          | Build complex objects step-by-step          | Making a custom Subway sandwich             |
+| Prototype        | Clone an existing fully built object        | Xerox copy of a filled form                 |
 
-## 🎯 STRUCTURAL DESIGN PATTERNS —
-
-## FULL SUMMARY
+## 🎯 STRUCTURAL DESIGN PATTERNS
 
 ### 1. Adapter
 
@@ -574,7 +526,7 @@ Treat individual objects and compositions (group of objects) the same way.
 
 ### 💡 Analogy:
 
-A folder can contain files or other folders — you can “open” both.
+A folder can contain files or other folders — you can "open" both.
 
 ### 🧪 Code:
 
@@ -584,28 +536,33 @@ interface Component {
 }
 
 class File implements Component {
-  String name;
-  File(String name) {
-    this.name = name;
-  }
-
+  @Override
   public void show() {
-    System.out.println("File: " + name);
+    System.out.println("File");
   }
 }
 
 class Folder implements Component {
-  String name;
-  List < Component > children = new ArrayList < > ();
-  Folder(String name) {
-    this.name = name;
+  List<Component> components = new ArrayList<>();
+
+  public void add(Component component) {
+    this.componenets.add(component);
   }
-  public void add(Component c) {
-    children.add(c);
-  }
+
+  @Override
   public void show() {
-    System.out.println("Folder: " + name);
-    for (Component c: children) c.show();
+    for(Component component : this.components) {
+      component.show();
+    }
+  }
+}
+
+public class Main {
+  public static void main(String[] args) {
+    Folder folder = new Folder();
+    folder.add(new File());
+    folder.add(new Folder());
+    folder.show();
   }
 }
 ```
@@ -808,39 +765,17 @@ class BasicRemote extends Remote {
 
 ## 📊 FINAL SUMMARY CHART – Structural
 
-## Patterns for Notion ✅
+| Pattern   | Intent                                         | Real-Life Analogy                | Key Concepts                    |
+| --------- | ---------------------------------------------- | -------------------------------- | ------------------------------- |
+| Adapter   | Convert one interface into another             | Phone charger adapter            | Compatibility, translation      |
+| Composite | Represent part–whole tree structures           | Folders and files                | Hierarchical objects, recursion |
+| Proxy     | Control access to an object                    | ATM with PIN verification        | Access control, lazy loading    |
+| Decorator | Add features without modifying the original    | Pizza with customizable toppings | Layered behavior, composition   |
+| Facade    | Provide a simple interface to a complex system | Amazon “Place Order” button      | Simplification, unified API     |
+| Flyweight | Share common data to save memory               | Character pool in a text editor  | Reuse, intrinsic vs extrinsic   |
+| Bridge    | Decouple abstraction from implementation       | Universal remote control         | Flexibility, separation         |
 
-```
-Pattern Intent Real-Life Analogy Key Concepts
-```
-
-```
-Adapter Convert one intanother erface to Phone charconverter ger Compatibility
-```
-
-```
-Composite Tree structure of objects Folders + files Hierarchical
-objects
-Proxy Control access to object ATM PIN check Access control
-```
-
-```
-Decorator Add features withoutmodifying original Pizza toppings Layeringbehavior
-```
-
-```
-Facade Unified intcomplex systemerface to a Amazon "PlaceOrderˮ Simplification
-```
-
-```
-Flyweight Share common datmemory a to save Characteditor er pool in Reuse
-```
-
-```
-Bridge Decouple abstraction frimplementation om Universal Remote Flexibility
-```
-
-## 🧠 Behavioral Patterns – Summary
+## 🧠 Behavioral Patterns
 
 ### 1. Observer Pattern
 
@@ -850,26 +785,34 @@ Bridge Decouple abstraction frimplementation om Universal Remote Flexibility
 
 ```java
 interface Observer {
-  void update(String news);
+  void update();
 }
 
-class NewsAgency {
-  List < Observer > observers = new ArrayList < > ();
-  String news;
-
-  void addObserver(Observer o) {
-    observers.add(o);
-  }
-
-  void updateNews(String news) {
-    this.news = news;
-    for (Observer o: observers) o.update(news);
+class Railway implements Observer {
+  @Override
+  public void update() {
+    System.out.println("Train is delayed");
   }
 }
 
-class BBC implements Observer {
-  public void update(String news) {
-    System.out.println("BBC " + news);
+class Airport implements Observer {
+  @Override
+  public void update() {
+    System.out.println("Flight is delayed");
+  }
+}
+
+class Station {
+  List <Observer> observers = new ArrayList<>();
+
+  public void add(Observer o) {
+    this.observers.add(o);
+  }
+
+  public void notifyObservers() {
+    for(Observer o : observers) {
+      o.update();
+    }
   }
 }
 ```
@@ -881,23 +824,44 @@ class BBC implements Observer {
 ### ✅ Code Snippet:
 
 ```java
-interface FlyStrategy {
-  void fly();
+interface Strategy {
+  public void pay();
 }
 
-class RocketFly implements FlyStrategy {
-  public void fly() {
-    System.out.println("Flying with rocket");
+class Cash implements Strategy {
+  @Override
+  public void pay() {
+    System.out.println("Paid via cash");
   }
 }
 
-class Duck {
-  FlyStrategy fs;
-  void setFlyStrategy(FlyStrategy fs) {
-    this.fs = fs;
+class Card implements Strategy {
+  @Override
+  public void pay() {
+    System.out.println("Paid via card");
   }
-  void performFly() {
-    fs.fly();
+}
+
+class PaymentStrategy {
+  Strategy strategy;
+
+  public void setStrategy(Strategy strategy) {
+    this.strategy = strategy;
+  }
+
+  public void pay() {
+    strategy.pay();
+  }
+}
+
+class Main {
+  public static void main(String[] args) {
+    PaymentStrategy ps = new PaymentStrategy();
+    ps.setStrategy(new Cash());
+    ps.pay();
+
+    ps.setStrategy(new Card());
+    ps.pay();
   }
 }
 ```
@@ -941,19 +905,37 @@ class RemoteControl {
 ### ✅ Code Snippet:
 
 ```java
-abstract class SupportHandler {
-  SupportHandler next;
-  void setNext(SupportHandler n) {
-    next = n;
+interface Handler {
+  void handle();
+  void setNext(Handler h);
+}
+
+class ErrorHandler implements Handler {
+  Handler next;
+
+  @Override
+  public void handle() {
+    System.out.println("Error handled");
   }
 
-  void handle(String msg) {
-    if (canHandle(msg)) process(msg);
-    else if (next != null) next.handle(msg);
+  @Override
+  public void setNext(Handler h) {
+    this.next = h;
+  }
+}
+
+class InfoHandler implements Handler {
+  Handler next;
+
+  @Override
+  public void handle() {
+    System.out.println("Info handled");
   }
 
-  abstract boolean canHandle(String msg);
-  abstract void process(String msg);
+  @Override
+  public void setNext(Handler h) {
+    this.next = h;
+  }
 }
 ```
 
@@ -1104,113 +1086,75 @@ class Editor {
 
 ## 📋 Final Summary Table
 
-```
-Pattern Purpose 1-liner)
-Observer Notify multiple objects about state changes
-Strategy Swap algorithms/behaviors at runtime
-Command Encapsulate a request/action
-Chain of Resp. Pass request along a chain of handlers
-```
-
-```
-State Object behavior changes based on internal state
-Mediator Central controller handles communication
-Iterator Traverse collections without exposing structure
-Template Method Define algorithm skeleton with custom steps
-Visitor Add new operations to object structure
-Memento Capture and restore object state
-```
+| Pattern         | Purpose (1-liner)                                        |
+| --------------- | -------------------------------------------------------- |
+| Observer        | Notify multiple subscribers when an object changes       |
+| Strategy        | Swap algorithms or behaviors at runtime                  |
+| Command         | Encapsulate a request as an object                       |
+| Chain of Resp.  | Pass a request through a chain of handlers               |
+| State           | Change object behavior based on internal state           |
+| Mediator        | Central controller manages communication between objects |
+| Iterator        | Traverse a collection without exposing its internals     |
+| Template Method | Define an algorithm skeleton with overridable steps      |
+| Visitor         | Add new operations without modifying object structure    |
+| Memento         | Capture and restore an object’s state                    |
 
 ## 🧾 Summary Chart
 
-```
-Topic Meaning Example
-Interface Segregation
-ISP
-```
+Here is the **fully cleaned, structured, Notion-ready version** of everything you pasted.
+All grammar, formatting, spacing, alignment, and wording corrected.
+No extra commentary — only the fixed content.
+
+---
+
+# **SOLID (Fixed & Clean)**
+
+## **DIP — Dependency Inversion Principle**
+
+| Topic                      | Meaning                                       | Example                  |
+| -------------------------- | --------------------------------------------- | ------------------------ |
+| Dependency Inversion (DIP) | High-level code should depend on abstractions | Use Switchable, not Bulb |
+| Inversion of Control (IoC) | External code supplies dependencies           | Pass Engine to Car       |
+
+---
+
+# **Factory Method vs Abstract Factory**
+
+| Feature       | Factory Method                     | Abstract Factory                              |
+| ------------- | ---------------------------------- | --------------------------------------------- |
+| Goal          | Create one object based on input   | Create families of related objects            |
+| Example       | ShapeFactory.createShape("circle") | UIFactory.createButton() + createCheckbox()   |
+| # of Products | One product at a time              | Multiple related products (Button, Checkbox)  |
+| Extensibility | Easy to add new shapes             | Easy to add new product families (e.g. Linux) |
+
+---
+
+# **When to Prefer Composition**
+
+| Prefer Composition When…                      | Why                                          |
+| --------------------------------------------- | -------------------------------------------- |
+| You need logic reuse across unrelated classes | Inheritance can’t cross hierarchies          |
+| You need runtime behavior changes             | Components can be swapped dynamically        |
+| To follow SOLID (SRP & OCP especially)        | Composition avoids rigid hierarchies         |
+| You want loose coupling                       | Easier testing, maintenance, and flexibility |
+
+---
+
+# **Composition vs Inheritance (Summary)**
 
 ```
-Don't force classes to implement
-unused methods
+| Inheritance               | Composition                       |
+|---------------------------|-----------------------------------|
+| “Is-A” relationship       | “Has-A” relationship              |
+| Static behavior           | Dynamic behavior (swap at runtime)|
+| Tight coupling            | Loose coupling                    |
+| Code reuse via parent     | Reuse via delegation              |
+| Hard to change hierarchy  | Easy to plug-and-play components  |
 ```
 
-```
-Split Printable,
-Scannable
-Dependency
-Inversion DIP
-```
+---
 
-```
-High-level code should depend on
-interface, not concrete class
-```
-
-```
-Use Switchable not
-LightBulb
-Inversion of Control
-IoC Let external code supply dependencies Pass Engine to Car
-```
-
-```
-Feature Factory Method Abstract Factory
-```
-
-```
-Goal
-Create one object based on
-input Create families of related objects
-```
-
-```
-Example ShapeFactory.createShape("circle") UIFactory.createButton()createCheckbox() +
-```
-
-```
-Number of Products One product at a time
-```
-
-```
-Multiple related products But ton Checkbox, etc.)
-```
-
-```
-Extensibility Easy to add new shape types Easy to add ne(e.g., Linux UIw product families
-```
-
-### 🔄 When to Prefer Composition
-
-```
-Prefer Composition When... Why
-You want to reuse logic across unrelated
-classes
-```
-
-```
-Inheritance doesnʼt allow cross-hierarchy
-reuse
-You need runtime behavior changes You can swap out components
-```
-
-```
-You want to follow SOLID principles EspeciallResponsibility Open/Closed and Singley
-```
-
-```
-You want loose coupling Easier to test and maintain
-```
-
-### 📑 Summary Chart
-
-```
-Inheritance Composition
-"Is-A" relationship "Has-A" relationship
-Static behavior Dynamic behavior (swap at runtime)
-Tight coupling Loose coupling
-Code reuse through parent Code reuse through delegation
-Hard to change hierarchy Easy to plug-and-play parts
-```
+# **Composition Example **
 
 ```java
 interface SoundBehavior {
@@ -1218,152 +1162,93 @@ interface SoundBehavior {
 }
 
 class Bark implements SoundBehavior {
-  public void makeSound() {
-    System.out.println("Bark");
-  }
+  public void makeSound() { System.out.println("Bark"); }
 }
 
 class Howl implements SoundBehavior {
-  public void makeSound() {
-    System.out.println("Howl");
-  }
+  public void makeSound() { System.out.println("Howl"); }
 }
 
 class Dog {
-  SoundBehavior behavior;
+  private SoundBehavior behavior;
+
   public Dog(SoundBehavior behavior) {
     this.behavior = behavior;
   }
+
   public void makeSound() {
     behavior.makeSound();
   }
-  public void setBehavior(SoundBehavior b) {
-    this.behavior = b;
+
+  public void setBehavior(SoundBehavior newBehavior) {
+    this.behavior = newBehavior;
   }
 }
 ```
 
-❌ **Wrong Interpretation** ✅ **Correct Interpretation**
+---
 
-“If it’s on 5 servers, it’s
-distributed”
-
-```
-Itʼ s only distributed if those servers communicate
-over a network to coordinate different parts of the
-system
-```
-
-“Scaling a monolith to 10 VMs =
-distributed”
+# **Distributed Systems — Corrected Interpretations**
 
 ```
-Nope — youʼre just cloning the same app; there's no
-distributed logic
-```
-
-“Running microservices on a
-single server = not distributed”
-
-```
-Still distributed , because each service is
-autonomous and talks over network (e.g. HTTP,
-gRPC
-```
-
-“Only microservices =
-distributed”
-
-```
-Even replicated databases , cache clusters, or event
-buses = distributed
-```
-
-System Is it
-Distributed?
-Why?
-
-Single Java monolith scaled to 5
-servers ❌ No
-
-```
-Just replicated — no inter-node
-communication
-```
-
-Same monolith, but each server
-has own DB
-✅ Yes Now state is distributed  CAP
-applies
-
-Microservices on 1 machine ✅ Yes Separate componentcommunicating via netswork
-
-Redis Cluster with 3 shards ✅ Yes Coordination needed between
-Redis nodes
-
-Kafka brokers (even on 1
-machine) ✅ Yes
-
-```
-Multiple brokers coordinating topic
-partitions
-```
-
-Topic Key Idea Tools / Solutions
-
-Authentication Identity verification Sessions, Tokens, MFA
-
-Authorization Access control RBAC, ABAC
-
-OAuth Delegate user access via provider Google, Facebook Login
-
-JWT Stateless auth with encoded claims JWT librarJWT, JWT.io)ies (e.g., Java
-
-Secure
-Transmission Encrypt communication HTTPS, TLS, SSL
-
-SQL Injection Prevent SQL command injection Prepared statements, ORM
-
-XSS Prevent script injection in browser Escaping, CSP
-
-CSRF Prevent request forgery CSRF tcookiesokens, SameSite
-
-General Best
-Practices
-
-```
-Secure headers, logging,
-monitoring, rate-limiting
+❌ Wrong: “If it's on 5 servers, it's distributed.”
+✅ Correct: Only distributed if nodes communicate over a network.
 ```
 
 ```
-Helmet Node.js), Spring
-Security, etc.
-```
-
-Concept Key Idea Tools / Examples
-
-Load Balancing Distribute traffic evenly & avoidbottlenecks Nginx, HAProxy, AWS ELB
-
-Health Checks Remove unhealthy servers Liveness/readiness probes
-
-Disaster
-Recovery
-
-```
-Plan for outages & regional
-failures
+❌ Wrong: “Scaling monolith to 10 VMs = distributed.”
+✅ Correct: It’s just replication; no distributed logic.
 ```
 
 ```
-Pilot light, warm standby, active-
-active
+❌ Wrong: “Microservices on one machine = not distributed.”
+✅ Correct: Still distributed; services communicate over network protocols.
 ```
 
-Data Replication Copy data across nodes favailability or Master-slave, mastasync/sync er-master,
+```
+❌ Wrong: “Only microservices are distributed.”
+✅ Correct: DB clusters, caches, message brokers are also distributed.
+```
 
-Backup
-Snapshot + versioned data for
-rollback AWS S3, Glacier, RDS snapshots
+---
 
-Auto-Failover Switch to standby systems onfailure DNS failover, Kubernetesreadiness probes
+# **Distributed or Not? (Fixed Table)**
+
+| System                                    | Distributed? | Why                                          |
+| ----------------------------------------- | ------------ | -------------------------------------------- |
+| Monolith on 5 servers                     | ❌ No        | Pure replication; no inter-node coordination |
+| Monolith where each server has its own DB | ✅ Yes       | State is distributed; CAP tradeoffs appear   |
+| Microservices on 1 machine                | ✅ Yes       | Network calls between autonomous services    |
+| Redis Cluster (3 shards)                  | ✅ Yes       | Nodes coordinate & share data                |
+| Kafka brokers (even on 1 machine)         | ✅ Yes       | Multiple brokers coordinate topic partitions |
+
+---
+
+# **Security Concepts (Fixed)**
+
+| Topic               | Key Idea                           | Tools / Solutions               |
+| ------------------- | ---------------------------------- | ------------------------------- |
+| Authentication      | Identity verification              | Sessions, Tokens, MFA           |
+| Authorization       | Access control                     | RBAC, ABAC                      |
+| OAuth               | Delegated user access              | Google Login, OAuth providers   |
+| JWT                 | Stateless auth with claims         | JWT libraries, jwt.io           |
+| Secure Transmission | Encrypt data in transit            | HTTPS, TLS, SSL                 |
+| SQL Injection       | Prevent SQL code injection         | Prepared statements, ORM        |
+| XSS                 | Prevent script injection           | Escaping, CSP                   |
+| CSRF                | Prevent cross-site request forgery | CSRF tokens, SameSite cookies   |
+| Best Practices      | General security hardening         | Headers, logging, rate-limiting |
+
+---
+
+# **Scalability & Reliability (Fixed)**
+
+| Concept           | Key Idea                                | Tools / Examples                         |
+| ----------------- | --------------------------------------- | ---------------------------------------- |
+| Load Balancing    | Distribute traffic evenly               | Nginx, HAProxy, AWS ELB                  |
+| Health Checks     | Remove unhealthy nodes                  | Liveness / Readiness probes              |
+| Disaster Recovery | Plan for regional or service failure    | Pilot light, warm standby, active-active |
+| Data Replication  | Copy data across nodes for availability | Master-slave, master-master              |
+| Backup            | Versioned snapshots for rollback        | AWS S3, Glacier, RDS snapshots           |
+| Auto-Failover     | Automatically switch to standby systems | DNS failover, Kubernetes probes          |
+
+---
