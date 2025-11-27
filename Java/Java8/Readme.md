@@ -28,7 +28,7 @@ Java 8 introduced commonly used functional interfaces in `java.util.function`.
 | **Consumer<T>**   | `void accept(T t)`  | `System.out::println` | Processing       | Void-returning function with one argument    |
 | **Supplier<T>**   | `T get()`           | `() -> Math.random()` | Value generation | Value-returning function without arguments   |
 
-🔗 [FunctionalInterfacesDemo.java](/Java/Java8%20features/Java8Demo.java)
+🔗 [FunctionalInterfacesDemo.java](./Java8Demo.java)
 
 ---
 
@@ -43,7 +43,7 @@ It allows concise, readable, and parallelizable data processing.
 - **Intermediate Operations**: `map()`, `filter()`, `sorted()`, `flatMap()`...
 - **Terminal Operations**: `collect()`, `reduce()`, `count()`, `forEach()`
 
-🔗 [StreamDemo.java](/Java/Java8%20features/JavaStream.java)
+🔗 [StreamDemo.java](./JavaStream.java)
 
 ---
 
@@ -60,7 +60,7 @@ They are **lazy** and only execute when a terminal operation is called.
 - `peek()` → debug elements in pipeline
 - `flatMap()` → flatten nested streams
 
-🔗 [IntermediateOps.java](/Java/Java8%20features/IntermediateOps.java)
+🔗 [IntermediateOps.java](.IntermediateOps.java)
 
 ---
 
@@ -77,7 +77,7 @@ Operations that **consume a stream** and produce a result.
 - `min()` / `max()` → get extreme values
 - `summaryStatistics()` → get count, sum, min, max, average
 
-🔗 [TerminalOps.java](/Java/Java8%20features/TerminalOps.java)
+🔗 [TerminalOps.java](./TerminalOps.java)
 
 ---
 
@@ -88,7 +88,7 @@ Operations that **consume a stream** and produce a result.
 - **Avoid side effects** (shared mutable state).
 - Use `forEachOrdered()` if order matters.
 
-🔗 [ParallelStream.java](/Java/Java8%20features/ParallelStream.java)
+🔗 [ParallelStream.java](./ParallelStream.java)
 
 ---
 
@@ -194,3 +194,5 @@ println(randomSupplier.get());
     - Get a comma-separated string of all employee names sorted alphabetically.
 
 --- 
+
+[Solutions](./Questions.java)
