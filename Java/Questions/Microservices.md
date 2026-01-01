@@ -1015,6 +1015,8 @@ public class OrderService {
 #### Considerations:
 - **Complexity**: This approach adds complexity due to managing separate models for reading and writing.
 - **Data Consistency**: This pattern works well for eventual consistency where real-time consistency isn't a strict requirement.
+- **Track 1:** Strong Consistency (CDC + Debezium)
+- **Track 2:** Eventual Consistency (CQRS + Kafka)
 
 ---
 
