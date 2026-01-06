@@ -3,217 +3,236 @@
 ## 📋 Problem Statement
 
 Design a metrics scraping, alerting (like prometheus) that can handle:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-- [Feature 4]
-- [Feature 5]
+- **100K+ unique time series** (metrics with unique label combinations)
+- **5M+ data points per minute** ingestion
+- **2+ years of data retention** with configurable policies
+- **Sub-second alert evaluation** latency
+- **Multi-tenant** support with isolation
 
 ## 🎯 Functional Requirements
 
 ### Core Features
-1. **[Feature 1]**: [Description]
-2. **[Feature 2]**: [Description]
-3. **[Feature 3]**: [Description]
-4. **[Feature 4]**: [Description]
-5. **[Feature 5]**: [Description]
+1. **Metrics Scraping & Ingestion**: Pull metrics from various endpoints (HTTP, JMX, custom exporters) at configurable intervals
+2. **Time-Series Storage**: Efficient storage with compression for 2+ years of historical data
+3. **PromQL-like Query Language**: Support for complex queries, aggregations, and mathematical operations
+4. **Alerting Engine**: Rule-based alerting with flexible thresholds, time windows, and severity levels
+5. **Dashboard & Visualization**: Web UI for creating dashboards, graphs, and exploring metrics
 
 ### Non-Functional Requirements
-- **Availability**: [Requirement]
-- **Latency**: [Requirement]
-- **Scalability**: [Requirement]
-- **Consistency**: [Requirement]
-- **Security**: [Requirement]
+- **Availability**: 99.95% uptime, multi-AZ deployment with automatic failover
+- **Latency**: <100ms for 95th percentile queries on recent data, <2s for complex queries on historical data
+- **Scalability**: Horizontal scaling to handle 10x current load without redesign
+- **Consistency**: Eventual consistency for distributed writes, strong consistency for metadata
+- **Security**: TLS encryption, OAuth2 authentication, RBAC authorization, data isolation between tenants
 
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
 
 ```
-[Insert architecture diagram here]
+┌─────────────────────────────────────────────────────────────┐
+│                    Load Balancer (Nginx)                    │
+└──────────────┬────────────────┬──────────────┬──────────────┘
+               │                │              │
+    ┌──────────▼────┐  ┌────────▼──────┐  ┌───▼────────────┐
+    │   Query API   │  │   Write API   │  │  Alert Manager │
+    │   (GraphQL)   │  │   (gRPC/HTTP) │  │                │
+    └───────┬───────┘  └───────┬───────┘  └───────┬────────┘
+            │                  │                   │
+    ┌───────▼──────────────────▼───────────────────▼───────┐
+    │              Query Router & Distributor              │
+    └──────────────┬──────────────────┬────────────────────┘
+                   │                  │
+         ┌─────────▼──────┐  ┌────────▼─────────┐
+         │  Query Engine  │  │   Ingest Node    │
+         │                │  │                  │
+         └────────┬───────┘  └────────┬─────────┘
+                  │                   │
+    ┌─────────────▼───────────────────▼─────────────┐
+    │           Storage: TSDB Cluster               │
+    │  ┌────────────┐ ┌────────────┐ ┌────────────┐│
+    │  │   Hot      │ │   Warm     │ │   Cold     ││
+    │  │  (2 weeks) │ │ (3 months) │ │ (2 years)  ││
+    │  └────────────┘ └────────────┘ └────────────┘│
+    └───────────────────────────────────────────────┘
+            │                  │                  │
+    ┌───────▼──────┐  ┌───────▼──────┐  ┌────────▼──────┐
+    │   SSD/NVMe   │  │    SSD       │  │  HDD/S3       │
+    └──────────────┘  └──────────────┘  └───────────────┘
 ```
 
 ### Core Components
 
-#### 1. **[Component 1]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 1. **Ingestion Pipeline**
+- **Scraper Service**: Discovers targets and pulls metrics via HTTP/HTTPS
+- **Push Gateway**: Accepts metrics from short-lived jobs that can't be scraped
+- **Message Queue (Kafka)**: Buffers incoming metrics during spikes
+- **Validation & Normalization**: Sanitizes, validates, and transforms metrics
 
-#### 2. **[Component 2]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 2. **Time-Series Database (TSDB)**
+- **Hot Storage**: In-memory + SSD for last 2 weeks of data
+- **Warm Storage**: SSD for 3 months of data with compression
+- **Cold Storage**: Object storage (S3/GCS) for 2+ years with heavy compression
+- **Index**: Inverted index for fast label-based lookups
 
-#### 3. **[Component 3]**
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+#### 3. **Query & Alert Engine**
+- **Query Parser**: Parses and validates query language
+- **Distributed Query Planner**: Splits queries across storage tiers
+- **Alert Rule Evaluator**: Continuously evaluates alert rules
+- **Notification Service**: Sends alerts via email, Slack, PagerDuty, webhooks
 
 ## 💾 Data Models
 
-### [Entity 1] Schema
+### Time-Series Data Schema
 ```javascript
+// Metric sample
 {
-  _id: ObjectId,
-  // Add fields here
+  metric_name: "cpu_usage_percent",
+  labels: {
+    job: "api-server",
+    instance: "10.0.1.1:9100",
+    region: "us-east-1",
+    team: "platform"
+  },
+  samples: [  // Compressed format
+    [timestamp1, value1],  // delta-encoding + XOR compression
+    [timestamp2, value2],
+    // ...
+  ],
+  metadata: {
+    metric_type: "gauge",  // gauge, counter, histogram, summary
+    help: "CPU usage percentage",
+    unit: "percent",
+    retention_days: 730
+  }
 }
 ```
 
-### [Entity 2] Schema
+### Alert Rule Schema
 ```javascript
 {
-  _id: ObjectId,
-  // Add fields here
+  rule_id: "alert-001",
+  name: "HighCPUUsage",
+  expr: "avg(cpu_usage_percent{job=\"api-server\"}) > 80",
+  duration: "5m",  // Condition must be true for 5 minutes
+  labels: {
+    severity: "warning",
+    team: "platform",
+    service: "api"
+  },
+  annotations: {
+    summary: "High CPU usage on {{ $labels.instance }}",
+    description: "CPU usage is {{ $value }}% for 5 minutes",
+    runbook: "https://runbook.example.com/high-cpu"
+  },
+  active_at: "2024-01-15T10:30:00Z",
+  silenced_until: null
 }
 ```
 
-## 🔧 Key Implementation Details
-
-### [Implementation Detail 1]
+### Tenant Schema
 ```javascript
-// Add implementation code here
-```
-
-### [Implementation Detail 2]
-```javascript
-// Add implementation code here
+{
+  tenant_id: "tenant-abc123",
+  name: "Acme Corp",
+  quota: {
+    max_series: 100000,
+    samples_per_second: 10000,
+    retention_days: 730,
+    alert_rules: 500
+  },
+  isolation: {
+    storage_prefix: "tenants/abc123/",
+    network_vpc: "vpc-123",
+    api_key: "sk_live_..."
+  }
+}
 ```
 
 ## 🚀 Scalability Considerations
 
 ### Horizontal Scaling
-- [Scaling strategy 1]
-- [Scaling strategy 2]
-- [Scaling strategy 3]
+- **Stateless services**: All API services are stateless and can be scaled horizontally
+- **Sharding by tenant/time**: Data sharded by tenant ID and time ranges
+- **Read/write separation**: Separate read replicas for query workloads
+- **Caching layer**: Redis cache for frequently accessed metadata and query results
 
-### Caching Strategy
-- [Caching strategy 1]
-- [Caching strategy 2]
-- [Caching strategy 3]
+### Storage Scaling
+- **Hot/Warm/Cold tiers**: Automatic data movement between storage tiers
+- **Compression algorithms**: Different compression for different age of data
+- **Columnar storage**: Parquet/ORC format for cold storage queries
+- **Data lifecycle**: Automatic deletion based on retention policies
 
-### Database Design
-- [Database strategy 1]
-- [Database strategy 2]
-- [Database strategy 3]
+### Query Performance
+- **Query federation**: Split queries across storage tiers in parallel
+- **Result caching**: Cache query results with TTL based on data age
+- **Materialized views**: Pre-compute common aggregations
+- **Query timeout & limits**: Protect system from expensive queries
 
 ## 🔒 Security Considerations
-
-### Authentication & Authorization
-- [Security measure 1]
-- [Security measure 2]
-- [Security measure 3]
-
-### Data Protection
-- [Protection measure 1]
-- [Protection measure 2]
-- [Protection measure 3]
+- **Authentication**: OAuth2, JWT tokens, API keys with rotation
+- **Authorization**: RBAC with tenant isolation at storage level
+- **Encryption**: TLS 1.3 for transit, AES-256 for data at rest
+- **Audit logging**: All access and modifications logged
+- **Rate limiting**: Per-tenant rate limits to prevent abuse
+- **Data masking**: Sensitive labels (IPs, hostnames) can be hashed
 
 ## 📊 Performance Optimization
 
-### [Optimization Area 1]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Ingestion Pipeline
+- **Batching**: Aggregate samples before writing (100-1000 samples per batch)
+- **Compression**: Snappy/LZ4 compression for network transmission
+- **Write-ahead log**: For durability before batch writes
+- **Memory pool**: Reuse memory buffers to reduce GC pressure
 
-### [Optimization Area 2]
-- [Optimization 1]
-- [Optimization 2]
-- [Optimization 3]
+### Query Engine
+- **Query planning**: Cost-based query optimization
+- **Vectorized execution**: Process multiple samples simultaneously
+- **Predicate pushdown**: Filter data at storage layer when possible
+- **Bloom filters**: Quickly exclude irrelevant time series
 
-## 🧪 Testing Strategy
-
-### Unit Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Integration Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-### Load Testing
-- [Test type 1]
-- [Test type 2]
-- [Test type 3]
-
-## 🚀 Implementation Phases
-
-### Phase 1: MVP ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 2: Enhanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 3: Advanced Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-### Phase 4: Enterprise Features ([Timeframe])
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Language**: [Language]
-- **Framework**: [Framework]
-- **Database**: [Database]
-- **Cache**: [Cache]
-- **Message Queue**: [Message Queue]
-
-### Frontend
-- **Framework**: [Framework]
-- **State Management**: [State Management]
-- **UI Library**: [UI Library]
-
-### Infrastructure
-- **Cloud**: [Cloud Provider]
-- **Load Balancer**: [Load Balancer]
-- **CDN**: [CDN]
-- **Monitoring**: [Monitoring]
-- **Logging**: [Logging]
-
-## 📈 Monitoring & Analytics
-
-### Key Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-### Business Metrics
-- **[Metric 1]**: [Description]
-- **[Metric 2]**: [Description]
-- **[Metric 3]**: [Description]
-
-## 🔄 Disaster Recovery
-
-### Backup Strategy
-- [Backup strategy 1]
-- [Backup strategy 2]
-- [Backup strategy 3]
+### Storage Layer
+- **LSM-tree structure**: Append-only writes with background compaction
+- **Delta encoding**: Store only differences between consecutive samples
+- **Gorilla compression**: Specialized compression for time-series data
+- **Data skipping indexes**: Store min/max values per data chunk
 
 ### Failover Strategy
-- [Failover strategy 1]
-- [Failover strategy 2]
-- [Failover strategy 3]
+1. **Active-active API layer**: Multiple API instances behind load balancer
+2. **Storage replication**: 3x replication across availability zones
+3. **Graceful degradation**: During failures, reduce data resolution but keep system up
+4. **Disaster recovery**: Cross-region async replication for critical data
+5. **Automated recovery**: Self-healing with automatic node replacement
+
+## 🧪 Testing Strategy
+- **Load testing**: Simulate 10x production load to identify bottlenecks
+- **Chaos engineering**: Randomly kill services to test resilience
+- **Canary deployments**: Roll out changes to small percentage of traffic first
+- **Backward compatibility**: Ensure query API remains compatible
+
+## 💰 Cost Optimization
+- **Storage tiering**: 90%+ of data in cheap object storage
+- **Data lifecycle**: Automatic deletion of expired data
+- **Query optimization**: Minimize data scanned for common queries
+- **Spot instances**: Use spot instances for stateless workloads
 
 ---
 
 ## 📚 Additional Resources
 
-- [Resource 1](link)
-- [Resource 2](link)
-- [Resource 3](link)
-- [Resource 4](link)
+- [Prometheus Architecture](https://prometheus.io/docs/introduction/overview/)
+- [Facebook Gorilla Paper](https://www.vldb.org/pvldb/vol8/p1816-teller.pdf)
+- [Time Series Database Comparison](https://db-engines.com/en/ranking/time+series+dbms)
+- [Monitoring Best Practices](https://landing.google.com/sre/sre-book/chapters/monitoring-distributed-systems/)
+- [Thanos Architecture](https://thanos.io/tip/thanos/design.md/)
+- [OpenMetrics Specification](https://openmetrics.io/)
+- [SRE Alerting Principles](https://sre.google/sre-book/monitoring-distributed-systems/)
 
 ---
 
-**Note**: This is a comprehensive system design for educational purposes. Real-world implementations may vary based on specific requirements, constraints, and business needs.
+**Estimated System Requirements for 100K series, 5M samples/min:**
+- **Ingestion nodes**: 3-5 nodes (16 CPU, 32GB RAM)
+- **Query nodes**: 5-7 nodes (32 CPU, 64GB RAM) 
+- **Hot storage**: 5TB SSD (2 weeks retention)
+- **Cold storage**: 50TB HDD/S3 (2 years retention)
+- **Monthly cost**: ~$5K-$10K (cloud infrastructure)
