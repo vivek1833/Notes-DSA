@@ -12,7 +12,7 @@ class Bipartite {
         int v=mat.length;
         Queue<Integer> q = new LinkedList<>();
 
-        int[] vis = new int[v];   // 0 1 or 2, 0 not vis
+        int[] vis = new int[v];   
 
         for(int i=0;i<v;i++) {
             if(vis[i]==0) {

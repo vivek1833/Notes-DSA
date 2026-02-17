@@ -1,7 +1,9 @@
 /*
-    Problem Link: https://www.geeksforgeeks.org/bellman-ford-algorithm-dp-23/
+    Problem Link: https://www.geeksforgeeks.org/problems/distance-from-the-source-bellman-ford-algorithm/1
     
     Bellman-Ford Algorithm - Detect Negative Weight Cycle
+    - Do n-1 relaxations
+    - nth relaxation check for negative weight cycle
 */
 
 import java.util.*;
@@ -28,9 +30,10 @@ class Bellmann_Ford_Algo {
             int dest = edge.get(1);
             int weight = edge.get(2);
             if (dis[src] != Integer.MAX_VALUE && dis[src] + weight < dis[dest]) {
-                return 1;
+                return 1;   // Negative Weight Cycle
             }
         }
+
         return 0;
     }
 }

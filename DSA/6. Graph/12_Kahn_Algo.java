@@ -41,6 +41,7 @@ class Kahn_Algo {
                 }
             }
         }
+        
         if (ans == v) {
             return false;
         }
