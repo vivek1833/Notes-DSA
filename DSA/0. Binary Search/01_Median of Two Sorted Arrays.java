@@ -32,6 +32,32 @@
         - -10^6 <= nums1[i], nums2[i] <= 10^6
 */
 
+/*
+    left: The count of elements that must exist before (or including) the median.
+    m1:	  How many elements from nums1 go into the left partition
+    m2:	  How many elements from nums2 go into the left partition
+
+    Eg:
+        Suppose:
+        nums1 = [1, 3]
+        nums2 = [2, 4, 5]
+
+        Total = 5
+            left = (5+1)/2 = 3
+
+        So we must place exactly 3 elements in left partition. Valid partition:
+            Left:  [1, 2, 3]
+            Right: [4, 5]
+        
+        Try m1 = 1
+        m2 = 4 - 1 = 3
+
+        Left side:
+            [1] from nums1
+            [2,4,5] from nums2
+
+*/
+
 // TC: O(log(min(m,n)))
 // SC: O(1)
 class Solution {
